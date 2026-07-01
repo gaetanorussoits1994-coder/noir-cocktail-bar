@@ -44,12 +44,12 @@ const itemVariants: Variants = {
 export function Contact() {
   return (
     <section
-      className="relative overflow-hidden bg-background-primary px-6 py-24 sm:py-32 lg:px-8"
+      className="relative w-full max-w-full overflow-hidden bg-background-primary px-4 py-24 sm:px-6 sm:py-32 lg:px-8"
       id="contatti"
     >
       <div
         aria-hidden="true"
-        className="absolute bottom-0 left-0 size-96 rounded-full bg-gold/5 blur-3xl"
+        className="absolute bottom-0 left-0 size-72 max-w-full rounded-full bg-gold/5 blur-3xl sm:size-96"
       />
 
       <div
@@ -126,10 +126,10 @@ export function Contact() {
 
         <motion.div
           className="relative min-h-[30rem] overflow-hidden rounded-card border border-gold/20 bg-background-secondary shadow-gold"
-          initial={{ opacity: 0, x: 48 }}
+          initial={{ opacity: 0, y: 32 }}
           transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
           viewport={{ amount: 0.2, once: true }}
-          whileInView={{ opacity: 1, x: 0 }}
+          whileInView={{ opacity: 1, y: 0 }}
         >
           <div
             aria-hidden="true"
@@ -141,11 +141,11 @@ export function Contact() {
           />
           <div
             aria-hidden="true"
-            className="absolute top-[22%] left-[-10%] h-px w-[75%] rotate-12 bg-gold/15"
+            className="absolute top-[22%] left-0 h-px w-[70%] rotate-12 bg-gold/15"
           />
           <div
             aria-hidden="true"
-            className="absolute right-[-10%] bottom-[25%] h-px w-[80%] -rotate-12 bg-gold/15"
+            className="absolute right-0 bottom-[25%] h-px w-[70%] -rotate-12 bg-gold/15"
           />
 
           <div className="absolute inset-0 flex items-center justify-center">

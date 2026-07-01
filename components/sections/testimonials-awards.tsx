@@ -84,7 +84,7 @@ export function TestimonialsAwards() {
 
   return (
     <section
-      className="overflow-hidden bg-background-secondary px-6 py-24 sm:py-32 lg:px-8"
+      className="w-full max-w-full overflow-hidden bg-background-secondary px-4 py-24 sm:px-6 sm:py-32 lg:px-8"
       id="testimonials"
     >
       <div className="mx-auto max-w-7xl">
@@ -113,10 +113,10 @@ export function TestimonialsAwards() {
           </motion.div>
 
           <motion.aside
-            initial={{ opacity: 0, x: 48 }}
+            initial={{ opacity: 0, y: 32 }}
             transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
             viewport={{ amount: 0.25, once: true }}
-            whileInView={{ opacity: 1, x: 0 }}
+            whileInView={{ opacity: 1, y: 0 }}
           >
             <div className="mb-7 flex items-center gap-4">
               <span className="h-px w-10 bg-gold" />

@@ -30,7 +30,7 @@ export function SignaturePhilosophy() {
 
   return (
     <section
-      className="relative isolate flex min-h-[88svh] items-center justify-center overflow-hidden border-t border-border bg-background-primary px-6 py-24 sm:py-32"
+      className="relative isolate flex min-h-[88svh] w-full max-w-full items-center justify-center overflow-hidden border-t border-border bg-background-primary px-4 py-24 sm:px-6 sm:py-32 lg:px-8"
       id="signature-philosophy"
     >
       <div

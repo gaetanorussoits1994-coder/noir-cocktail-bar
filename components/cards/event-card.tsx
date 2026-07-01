@@ -37,7 +37,7 @@ export function EventCard({
     >
       <div
         aria-hidden="true"
-        className="absolute -top-20 -right-20 size-48 rounded-full bg-gold/5 blur-3xl"
+        className="absolute -top-20 right-0 size-48 max-w-full rounded-full bg-gold/5 blur-3xl"
       />
 
       <div className="relative flex min-w-0 items-center gap-3 text-gold">

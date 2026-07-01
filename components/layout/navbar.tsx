@@ -52,7 +52,7 @@ export function Navbar() {
     <>
       <header
         className={cn(
-          "fixed inset-x-0 top-0 z-50 border-b transition-[background-color,border-color,backdrop-filter] duration-500",
+          "fixed inset-x-0 top-0 z-50 w-full max-w-full overflow-x-hidden border-b transition-[background-color,border-color,backdrop-filter] duration-500",
           isScrolled
             ? "border-border bg-background-primary/90 backdrop-blur-xl"
             : "border-transparent bg-transparent",
@@ -60,7 +60,7 @@ export function Navbar() {
       >
         <nav
           aria-label="Navigazione principale"
-          className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-8"
+          className="mx-auto flex h-20 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8"
         >
           <a
             className="font-display text-3xl font-semibold tracking-[0.08em] text-gold-light"
@@ -116,7 +116,7 @@ export function Navbar() {
 
             <motion.aside
               animate={{ x: 0 }}
-              className="fixed inset-y-0 right-0 z-50 flex w-[min(88vw,380px)] flex-col border-l border-border bg-background-secondary px-7 py-6 shadow-soft lg:hidden"
+              className="fixed inset-y-0 right-0 z-50 flex w-[min(88vw,380px)] max-w-full flex-col overflow-x-hidden border-l border-border bg-background-secondary px-5 py-6 shadow-soft sm:px-7 lg:hidden"
               exit={{ x: "100%" }}
               id="mobile-navigation"
               initial={{ x: "100%" }}

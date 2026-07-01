@@ -131,7 +131,7 @@ export function Hero() {
 
   return (
     <section
-      className="relative isolate flex min-h-svh items-center justify-center overflow-hidden bg-background-primary px-6 pt-20 text-noir-white"
+      className="relative isolate flex min-h-svh w-full max-w-full items-center justify-center overflow-hidden bg-background-primary px-4 pt-20 text-noir-white sm:px-6 lg:px-8"
       id="home"
     >
       <div aria-hidden="true" className="absolute inset-0">
@@ -151,7 +151,7 @@ export function Hero() {
 
       <motion.section
         animate="visible"
-        className="relative z-10 mx-auto max-w-5xl text-center"
+        className="relative z-10 mx-auto w-full max-w-5xl overflow-hidden text-center"
         initial="hidden"
         variants={containerVariants}
       >
@@ -168,7 +168,7 @@ export function Hero() {
         </motion.div>
 
         <motion.h1
-          className="font-display text-6xl leading-[0.9] font-medium tracking-[-0.04em] text-gold-light drop-shadow-[0_0_36px_rgba(200,169,106,0.18)] sm:text-8xl lg:text-9xl"
+          className="break-words font-display text-5xl leading-[0.9] font-medium tracking-[-0.04em] text-gold-light drop-shadow-[0_0_36px_rgba(200,169,106,0.18)] [overflow-wrap:anywhere] min-[360px]:text-6xl sm:text-8xl lg:text-9xl"
           variants={itemVariants}
         >
           {content.title}

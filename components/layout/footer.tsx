@@ -7,7 +7,7 @@ import { footerLinks } from "@/lib/data/static-content";
 export function Footer() {
   return (
     <motion.footer
-      className="border-t border-border bg-background-secondary px-6 pt-20 pb-8 lg:px-8"
+      className="w-full max-w-full overflow-hidden border-t border-border bg-background-secondary px-4 pt-20 pb-8 sm:px-6 lg:px-8"
       initial={{ opacity: 0, y: 24 }}
       transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
       viewport={{ amount: 0.1, once: true }}

@@ -13,7 +13,7 @@ import { TestimonialsAwards } from "@/components/sections/testimonials-awards";
 export default function Home() {
   return (
     <>
-      <main>
+      <main className="w-full max-w-full overflow-hidden">
         <Hero />
         <Experience />
         <Menu />

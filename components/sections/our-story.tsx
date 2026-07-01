@@ -58,7 +58,7 @@ const staggerVariants: Variants = {
 export function OurStory() {
   return (
     <section
-      className="relative overflow-hidden bg-background-secondary px-6 py-24 sm:py-32 lg:px-8"
+      className="relative w-full max-w-full overflow-hidden bg-background-secondary px-4 py-24 sm:px-6 sm:py-32 lg:px-8"
       id="our-story"
     >
       <div
@@ -109,10 +109,10 @@ export function OurStory() {
 
           <motion.div
             className="relative aspect-[4/5] overflow-hidden rounded-card border border-border shadow-soft"
-            initial={{ opacity: 0, x: 48 }}
+            initial={{ opacity: 0, y: 32 }}
             transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
             viewport={{ amount: 0.2, once: true }}
-            whileInView={{ opacity: 1, x: 0 }}
+            whileInView={{ opacity: 1, y: 0 }}
           >
             <Image
               alt="Gli interni eleganti del Noir Cocktail Bar"

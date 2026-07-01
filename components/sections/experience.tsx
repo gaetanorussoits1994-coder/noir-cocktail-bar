@@ -15,16 +15,16 @@ const revealTransition = {
 export function Experience() {
   return (
     <section
-      className="overflow-hidden bg-background-secondary px-6 py-24 sm:py-32 lg:px-8"
+      className="w-full max-w-full overflow-hidden bg-background-secondary px-4 py-24 sm:px-6 sm:py-32 lg:px-8"
       id="experience"
     >
       <div className="mx-auto grid max-w-7xl items-center gap-14 lg:grid-cols-[1.05fr_0.95fr] lg:gap-20">
         <motion.div
           className="relative aspect-[4/5] overflow-hidden rounded-card border border-border shadow-soft"
-          initial={{ opacity: 0, x: -48 }}
+          initial={{ opacity: 0, y: 32 }}
           transition={revealTransition}
           viewport={{ amount: 0.25, once: true }}
-          whileInView={{ opacity: 1, x: 0 }}
+          whileInView={{ opacity: 1, y: 0 }}
         >
           <Image
             alt="Cocktail artigianale servito sul bancone del Noir Cocktail Bar"
@@ -44,10 +44,10 @@ export function Experience() {
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, x: 48 }}
+          initial={{ opacity: 0, y: 32 }}
           transition={{ ...revealTransition, delay: 0.08 }}
           viewport={{ amount: 0.3, once: true }}
-          whileInView={{ opacity: 1, x: 0 }}
+          whileInView={{ opacity: 1, y: 0 }}
         >
           <SectionTitle
             align="left"

@@ -31,9 +31,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="it">
+    <html className="max-w-full overflow-x-hidden" lang="it">
       <body
-        className={`${inter.variable} ${cormorantGaramond.variable} antialiased`}
+        className={`${inter.variable} ${cormorantGaramond.variable} w-full max-w-full overflow-x-hidden antialiased`}
       >
         <SmoothScrollProvider>
           <ScrollProgress />

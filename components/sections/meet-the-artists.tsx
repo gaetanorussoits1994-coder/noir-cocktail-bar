@@ -18,7 +18,7 @@ const gridVariants: Variants = {
 export function MeetTheArtists() {
   return (
     <section
-      className="bg-background-primary px-6 py-24 sm:py-32 lg:px-8"
+      className="w-full max-w-full overflow-hidden bg-background-primary px-4 py-24 sm:px-6 sm:py-32 lg:px-8"
       id="meet-the-artists"
     >
       <div className="mx-auto max-w-7xl">
