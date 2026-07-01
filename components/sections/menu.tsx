@@ -23,9 +23,15 @@ type CocktailRow = {
   category_id: string | null;
   name: string;
   description: string | null;
+  ingredients: string | null;
   price: number | string | null;
   image_url: string | null;
+  is_signature: boolean;
   sort_order: number;
+};
+
+type MenuCocktail = CocktailCardProps & {
+  id: string;
 };
 
 function formatPrice(price: CocktailRow["price"]) {
@@ -54,8 +60,8 @@ const gridVariants: Variants = {
   },
 };
 
-export function SignatureCocktails() {
-  const [cocktails, setCocktails] = useState<CocktailCardProps[]>([]);
+export function Menu() {
+  const [cocktails, setCocktails] = useState<MenuCocktail[]>([]);
 
   useEffect(() => {
     const supabase = getSupabaseClient();
@@ -82,13 +88,14 @@ export function SignatureCocktails() {
                 category_id,
                 name,
                 description,
+                ingredients,
                 price,
                 image_url,
+                is_signature,
                 sort_order
               `,
             )
             .eq("is_active", true)
-            .eq("is_signature", true)
             .order("sort_order", { ascending: true }),
         ]);
 
@@ -104,10 +111,10 @@ export function SignatureCocktails() {
           (categoriesResult.data ?? []) as CocktailCategoryRow[];
         const cocktailRows =
           (cocktailsResult.data ?? []) as CocktailRow[];
-        const categoryOrder = new Map(
-          categories.map((category, index) => [
+        const categoriesById = new Map(
+          categories.map((category) => [
             category.id,
-            category.sort_order ?? index,
+            category,
           ]),
         );
 
@@ -117,21 +124,17 @@ export function SignatureCocktails() {
               cocktail,
             ): cocktail is CocktailRow & {
               category_id: string;
-              image_url: string;
             } =>
               Boolean(
                 cocktail.category_id &&
-                  categoryOrder.has(cocktail.category_id) &&
-                  cocktail.image_url?.trim(),
+                  categoriesById.has(cocktail.category_id),
               ),
           )
           .sort((first, second) => {
-            const firstCategoryOrder = categoryOrder.get(
-              first.category_id,
-            );
-            const secondCategoryOrder = categoryOrder.get(
-              second.category_id,
-            );
+            const firstCategoryOrder =
+              categoriesById.get(first.category_id)?.sort_order;
+            const secondCategoryOrder =
+              categoriesById.get(second.category_id)?.sort_order;
 
             return (
               (firstCategoryOrder ?? 0) -
@@ -139,13 +142,22 @@ export function SignatureCocktails() {
               first.sort_order - second.sort_order
             );
           })
-          .map((cocktail) => ({
-            image: cocktail.image_url.trim(),
-            name: cocktail.name,
-            description: cocktail.description?.trim() || "",
-            price: formatPrice(cocktail.price),
-            link: "#prenotazioni",
-          }));
+          .map((cocktail) => {
+            const category = categoriesById.get(cocktail.category_id);
+
+            return {
+              id: cocktail.id,
+              image: cocktail.image_url?.trim() || null,
+              name: cocktail.name,
+              description: cocktail.description?.trim() || "",
+              ingredients: cocktail.ingredients?.trim() || "",
+              price: formatPrice(cocktail.price),
+              tag:
+                category?.name.trim() ||
+                (cocktail.is_signature ? "Signature" : ""),
+              link: "#prenotazioni",
+            };
+          });
 
         setCocktails(activeCocktails);
       } catch {
@@ -163,7 +175,7 @@ export function SignatureCocktails() {
   return (
     <section
       className="bg-background-primary px-6 py-24 sm:py-32 lg:px-8"
-      id="signature-cocktails"
+      id="menu"
     >
       <div className="mx-auto max-w-7xl">
         <motion.div
@@ -175,7 +187,7 @@ export function SignatureCocktails() {
           <SectionTitle
             description="Creazioni esclusive, ingredienti ricercati e carattere deciso: scopri i cocktail che raccontano l'anima di Noir."
             label="La nostra selezione"
-            title="Signature Cocktails"
+            title="Cocktail Menu"
           />
         </motion.div>
 
@@ -187,7 +199,16 @@ export function SignatureCocktails() {
           whileInView="visible"
         >
           {cocktails.map((cocktail) => (
-            <CocktailCard {...cocktail} key={cocktail.name} />
+            <CocktailCard
+              description={cocktail.description}
+              image={cocktail.image}
+              ingredients={cocktail.ingredients}
+              key={cocktail.id}
+              link={cocktail.link}
+              name={cocktail.name}
+              price={cocktail.price}
+              tag={cocktail.tag}
+            />
           ))}
         </motion.div>
       </div>
