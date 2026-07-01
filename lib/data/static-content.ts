@@ -6,13 +6,6 @@ export type Cocktail = {
   link: string;
 };
 
-export type GalleryItem = {
-  image: string;
-  alt: string;
-  category: string;
-  aspectRatio: "landscape" | "portrait" | "square" | "tall";
-};
-
 export type Event = {
   title: string;
   schedule: string;
@@ -78,45 +71,6 @@ export const signatureCocktails = [
     link: "#prenotazioni",
   },
 ] satisfies Cocktail[];
-
-export const galleryItems = [
-  {
-    image: "/images/gallery-interior.png",
-    alt: "Interni eleganti del Noir Cocktail Bar",
-    category: "Atmosfera",
-    aspectRatio: "landscape",
-  },
-  {
-    image: "/images/noir-negroni.png",
-    alt: "Noir Negroni sul bancone",
-    category: "Signature",
-    aspectRatio: "portrait",
-  },
-  {
-    image: "/images/gallery-craft.png",
-    alt: "Strumenti e ingredienti per la miscelazione",
-    category: "Craft",
-    aspectRatio: "tall",
-  },
-  {
-    image: "/images/golden-smoke.png",
-    alt: "Golden Smoke con note aromatiche",
-    category: "Mixology",
-    aspectRatio: "square",
-  },
-  {
-    image: "/images/experience-cocktail.png",
-    alt: "Cocktail artigianale in un ambiente dalle luci soffuse",
-    category: "Experience",
-    aspectRatio: "landscape",
-  },
-  {
-    image: "/images/velvet-night.png",
-    alt: "Velvet Night in coppa",
-    category: "Night",
-    aspectRatio: "portrait",
-  },
-] satisfies GalleryItem[];
 
 export const events = [
   {

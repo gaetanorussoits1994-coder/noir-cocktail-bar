@@ -14,6 +14,7 @@ import { getSupabaseClient } from "@/lib/supabase";
 
 type GalleryImageRow = {
   id: string;
+  title: string | null;
   category: string | null;
   image_url: string;
   alt: string | null;
@@ -31,8 +32,18 @@ const validAspectRatios = new Set<
   GalleryCardProps["aspectRatio"]
 >(["landscape", "portrait", "square", "tall"]);
 
+const fallbackAspectRatios: GalleryCardProps["aspectRatio"][] = [
+  "landscape",
+  "portrait",
+  "tall",
+  "square",
+  "landscape",
+  "portrait",
+];
+
 function getAspectRatio(
   value: string | null,
+  index: number,
 ): GalleryCardProps["aspectRatio"] {
   if (
     value &&
@@ -41,7 +52,7 @@ function getAspectRatio(
     return value as GalleryCardProps["aspectRatio"];
   }
 
-  return "landscape";
+  return fallbackAspectRatios[index % fallbackAspectRatios.length];
 }
 
 export function Gallery() {
@@ -61,25 +72,34 @@ export function Gallery() {
       try {
         const { data, error } = await client
           .from("gallery_images")
-          .select(
-            "id, category, image_url, alt, aspect_ratio, sort_order",
-          )
+          .select("*")
           .eq("is_active", true)
-          .order("sort_order", { ascending: true })
-          .order("created_at", { ascending: true });
+          .order("sort_order");
 
-        if (error || !data || !isMounted) {
+        console.log(data);
+
+        if (error) {
+          console.error("Errore caricamento Gallery da Supabase:", error);
+          return;
+        }
+
+        if (!data || !isMounted) {
           return;
         }
 
         const items = (data as GalleryImageRow[])
           .filter((item) => item.image_url?.trim())
-          .map((item) => ({
+          .map((item, index) => ({
             id: item.id,
             image: item.image_url.trim(),
-            alt: item.alt?.trim() || item.category?.trim() || "Noir Gallery",
-            category: item.category?.trim() || "Noir",
-            aspectRatio: getAspectRatio(item.aspect_ratio),
+            alt:
+              item.alt?.trim() ||
+              item.title?.trim() ||
+              item.category?.trim() ||
+              "Noir Gallery",
+            category:
+              item.category?.trim() || item.title?.trim() || "Noir",
+            aspectRatio: getAspectRatio(item.aspect_ratio, index),
           }));
 
         setGalleryItems(items);
