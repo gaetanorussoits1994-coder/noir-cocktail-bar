@@ -19,10 +19,12 @@ const cardVariants: Variants = {
 };
 
 export type CocktailCardProps = {
-  image: string;
+  image: string | null;
   name: string;
   description: string;
+  ingredients: string;
   price: string;
+  tag: string;
   link: string;
 };
 
@@ -30,7 +32,9 @@ export function CocktailCard({
   image,
   name,
   description,
+  ingredients,
   price,
+  tag,
   link,
 }: CocktailCardProps) {
   return (
@@ -44,17 +48,24 @@ export function CocktailCard({
       }}
     >
       <div className="relative aspect-[4/5] overflow-hidden">
-        <Image
-          alt={`Cocktail ${name}`}
-          className="object-cover transition-transform duration-700 group-hover:scale-105"
-          fill
-          sizes="(max-width: 767px) 100vw, (max-width: 1279px) 50vw, 33vw"
-          src={image}
-        />
+        {image && (
+          <Image
+            alt={`Cocktail ${name}`}
+            className="object-cover transition-transform duration-700 group-hover:scale-105"
+            fill
+            sizes="(max-width: 767px) 100vw, (max-width: 1279px) 50vw, 33vw"
+            src={image}
+          />
+        )}
         <div
           aria-hidden="true"
           className="absolute inset-0 bg-gradient-to-t from-background-primary/70 via-transparent to-transparent"
         />
+        {tag && (
+          <span className="absolute top-5 left-5 rounded-full border border-gold/25 bg-background-primary/75 px-3 py-1.5 text-[0.6rem] font-semibold tracking-[0.18em] text-gold-light uppercase backdrop-blur-sm">
+            {tag}
+          </span>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col p-6 sm:p-7">
@@ -66,6 +77,15 @@ export function CocktailCard({
         </div>
 
         <p className="mt-4 text-sm leading-7 text-noir-gray">{description}</p>
+
+        {ingredients && (
+          <p className="mt-3 text-xs leading-6 text-noir-gray">
+            <span className="font-semibold tracking-[0.08em] text-gold uppercase">
+              Ingredienti:
+            </span>{" "}
+            {ingredients}
+          </p>
+        )}
 
         <PremiumButton className="mt-7" href={link} variant="link">
           Scopri il Cocktail

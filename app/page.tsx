@@ -5,8 +5,8 @@ import { Events } from "@/components/sections/events";
 import { Gallery } from "@/components/sections/gallery";
 import { Hero } from "@/components/sections/hero";
 import { MeetTheArtists } from "@/components/sections/meet-the-artists";
+import { Menu } from "@/components/sections/menu";
 import { OurStory } from "@/components/sections/our-story";
-import { SignatureCocktails } from "@/components/sections/signature-cocktails";
 import { SignaturePhilosophy } from "@/components/sections/signature-philosophy";
 import { TestimonialsAwards } from "@/components/sections/testimonials-awards";
 
@@ -16,7 +16,7 @@ export default function Home() {
       <main>
         <Hero />
         <Experience />
-        <SignatureCocktails />
+        <Menu />
         <Gallery />
         <Events />
         <OurStory />

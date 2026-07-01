@@ -1,11 +1,3 @@
-export type Cocktail = {
-  name: string;
-  description: string;
-  price: string;
-  image: string;
-  link: string;
-};
-
 export type Event = {
   title: string;
   schedule: string;
@@ -44,33 +36,6 @@ export type ContentLink = {
   label: string;
   href: string;
 };
-
-export const signatureCocktails = [
-  {
-    name: "Noir Negroni",
-    description:
-      "Un classico intenso reinterpretato con note agrumate e una profondità vellutata.",
-    price: "18€",
-    image: "/images/noir-negroni.png",
-    link: "#prenotazioni",
-  },
-  {
-    name: "Golden Smoke",
-    description:
-      "Bourbon, sfumature affumicate e accenti aromatici in un equilibrio caldo e avvolgente.",
-    price: "20€",
-    image: "/images/golden-smoke.png",
-    link: "#prenotazioni",
-  },
-  {
-    name: "Velvet Night",
-    description:
-      "Frutti scuri e delicate note floreali per un cocktail morbido, elegante e notturno.",
-    price: "17€",
-    image: "/images/velvet-night.png",
-    link: "#prenotazioni",
-  },
-] satisfies Cocktail[];
 
 export const events = [
   {
