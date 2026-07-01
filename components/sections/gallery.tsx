@@ -68,15 +68,16 @@ export function Gallery() {
 
     let isMounted = true;
 
-    async function loadGallery(client: SupabaseClient) {
+    async function loadGallery(supabase: SupabaseClient) {
       try {
-        const { data, error } = await client
+        const { data, error } = await supabase
           .from("gallery_images")
           .select("*")
           .eq("is_active", true)
           .order("sort_order");
 
-        console.log(data);
+        console.log("SUPABASE DATA:", data);
+        console.log("SUPABASE ERROR:", error);
 
         if (error) {
           console.error("Errore caricamento Gallery da Supabase:", error);
@@ -103,8 +104,8 @@ export function Gallery() {
           }));
 
         setGalleryItems(items);
-      } catch {
-        // La Gallery resta vuota se Supabase non è disponibile.
+      } catch (error) {
+        console.error("Errore inatteso nella Gallery:", error);
       }
     }
 
