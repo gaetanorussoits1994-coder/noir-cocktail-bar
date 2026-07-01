@@ -36,7 +36,7 @@ export function MeetTheArtists() {
         </motion.div>
 
         <motion.div
-          className="mt-14 grid gap-7 md:grid-cols-3"
+          className="mt-14 grid min-w-0 gap-7 sm:grid-cols-2 lg:grid-cols-3"
           initial="hidden"
           variants={gridVariants}
           viewport={{ amount: 0.12, once: true }}

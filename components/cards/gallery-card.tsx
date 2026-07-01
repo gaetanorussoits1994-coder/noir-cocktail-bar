@@ -33,7 +33,7 @@ export function GalleryCard({
     <motion.article
       aria-label={onClick ? `Apri immagine: ${alt}` : undefined}
       className={cn(
-        "group relative mb-6 break-inside-avoid overflow-hidden rounded-card border border-border bg-card shadow-soft",
+        "group relative mb-6 min-w-0 break-inside-avoid overflow-hidden rounded-card border border-border bg-card shadow-soft",
         aspectRatios[aspectRatio],
         onClick && "cursor-pointer",
       )}
@@ -72,7 +72,7 @@ export function GalleryCard({
       <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
         <div className="flex items-center gap-3">
           <span className="h-px w-8 bg-gold" />
-          <span className="text-[0.65rem] font-semibold tracking-[0.24em] text-gold-light uppercase">
+          <span className="min-w-0 break-words text-[0.65rem] font-semibold tracking-[0.24em] text-gold-light uppercase">
             {category}
           </span>
         </div>

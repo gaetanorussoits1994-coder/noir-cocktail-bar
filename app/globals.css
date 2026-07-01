@@ -35,14 +35,30 @@
 }
 
 html {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
   background: var(--background-primary);
 }
 
 body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
   margin: 0;
   background: var(--background-primary);
   color: var(--noir-white);
   font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+}
+
+main,
+section {
+  min-width: 0;
+  max-width: 100%;
+}
+
+img {
+  max-width: 100%;
 }
 
 a {

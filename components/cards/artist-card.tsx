@@ -37,7 +37,7 @@ export function ArtistCard({
 }: ArtistCardProps) {
   return (
     <motion.article
-      className="group relative aspect-[3/4] min-h-[34rem] overflow-hidden rounded-card border border-border bg-card shadow-soft"
+      className="group relative min-w-0 aspect-[3/4] overflow-hidden rounded-card border border-border bg-card shadow-soft"
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
       variants={cardVariants}
       whileHover={{
@@ -67,7 +67,7 @@ export function ArtistCard({
         <p className="text-[0.65rem] font-semibold tracking-[0.2em] text-gold uppercase">
           {role}
         </p>
-        <h3 className="mt-2 font-display text-3xl font-medium text-gold-light sm:text-4xl">
+        <h3 className="mt-2 break-words font-display text-3xl font-medium text-gold-light sm:text-4xl">
           {name}
         </h3>
 
@@ -80,7 +80,7 @@ export function ArtistCard({
 
         <a
           aria-label={`Instagram di ${name}`}
-          className="mt-5 inline-flex items-center gap-2 text-xs font-medium text-gold-light opacity-70 transition-[opacity,transform] duration-300 lg:translate-y-2 lg:opacity-0 lg:group-hover:translate-y-0 lg:group-hover:opacity-100"
+          className="mt-5 inline-flex max-w-full min-w-0 items-center gap-2 break-all text-xs font-medium text-gold-light opacity-70 transition-[opacity,transform] duration-300 lg:translate-y-2 lg:opacity-0 lg:group-hover:translate-y-0 lg:group-hover:opacity-100"
           href={instagramHref}
           rel="noreferrer"
           target="_blank"

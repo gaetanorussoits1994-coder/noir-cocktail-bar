@@ -20,7 +20,7 @@ export function EventCard({
 }: EventCardProps) {
   return (
     <motion.article
-      className="relative flex min-h-72 flex-col overflow-hidden rounded-card border border-border bg-card p-7 shadow-soft backdrop-blur-sm sm:p-8"
+      className="relative flex min-h-72 min-w-0 flex-col overflow-hidden rounded-card border border-border bg-card p-6 shadow-soft backdrop-blur-sm sm:p-8"
       initial={{ opacity: 0, y: 32 }}
       transition={{
         delay,
@@ -40,14 +40,19 @@ export function EventCard({
         className="absolute -top-20 -right-20 size-48 rounded-full bg-gold/5 blur-3xl"
       />
 
-      <div className="relative flex items-center gap-3 text-gold">
-        <CalendarDays aria-hidden="true" size={17} strokeWidth={1.5} />
-        <span className="text-xs font-semibold tracking-[0.16em] uppercase">
+      <div className="relative flex min-w-0 items-center gap-3 text-gold">
+        <CalendarDays
+          aria-hidden="true"
+          className="shrink-0"
+          size={17}
+          strokeWidth={1.5}
+        />
+        <span className="min-w-0 break-words text-xs font-semibold tracking-[0.16em] uppercase">
           {schedule}
         </span>
       </div>
 
-      <h3 className="relative mt-8 font-display text-4xl font-medium text-gold-light">
+      <h3 className="relative mt-8 break-words font-display text-4xl font-medium text-gold-light">
         {title}
       </h3>
 

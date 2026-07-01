@@ -39,7 +39,7 @@ export function SectionTitle({
 
       <h2
         className={cn(
-          "font-display leading-none font-medium tracking-[-0.03em] text-gold-light",
+          "break-words font-display leading-none font-medium tracking-[-0.03em] text-gold-light [overflow-wrap:anywhere]",
           isCentered
             ? "mt-5 text-5xl sm:text-6xl"
             : "text-5xl sm:text-6xl lg:text-7xl",

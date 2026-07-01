@@ -39,7 +39,7 @@ export function CocktailCard({
 }: CocktailCardProps) {
   return (
     <motion.article
-      className="group flex h-full flex-col overflow-hidden rounded-card border border-border bg-card shadow-soft backdrop-blur-sm"
+      className="group flex h-full min-w-0 flex-col overflow-hidden rounded-card border border-border bg-card shadow-soft backdrop-blur-sm"
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
       variants={cardVariants}
       whileHover={{
@@ -69,11 +69,13 @@ export function CocktailCard({
       </div>
 
       <div className="flex flex-1 flex-col p-6 sm:p-7">
-        <div className="flex items-start justify-between gap-5">
-          <h3 className="font-display text-3xl font-medium text-gold-light">
+        <div className="flex min-w-0 items-start justify-between gap-5">
+          <h3 className="min-w-0 break-words font-display text-3xl font-medium text-gold-light">
             {name}
           </h3>
-          <span className="pt-1 text-sm font-semibold text-gold">{price}</span>
+          <span className="shrink-0 pt-1 text-sm font-semibold text-gold">
+            {price}
+          </span>
         </div>
 
         <p className="mt-4 text-sm leading-7 text-noir-gray">{description}</p>
