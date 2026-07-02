@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Inter } from "next/font/google";
 
-import { Navbar } from "@/components/layout/navbar";
-import { SmoothScrollProvider } from "@/components/providers/smooth-scroll-provider";
-import { ScrollProgress } from "@/components/ui/scroll-progress";
+import { SiteChrome } from "@/components/layout/site-chrome";
 
 import "lenis/dist/lenis.css";
 import "./globals.css";
@@ -35,11 +33,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${cormorantGaramond.variable} w-full max-w-full overflow-x-hidden antialiased`}
       >
-        <SmoothScrollProvider>
-          <ScrollProgress />
-          <Navbar />
-          {children}
-        </SmoothScrollProvider>
+        <SiteChrome>{children}</SiteChrome>
       </body>
     </html>
   );

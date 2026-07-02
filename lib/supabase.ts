@@ -26,9 +26,9 @@ export function getSupabaseClient(): SupabaseClient<Database> | null {
   try {
     supabaseClient = createClient<Database>(url, anonKey, {
       auth: {
-        autoRefreshToken: false,
-        detectSessionInUrl: false,
-        persistSession: false,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        persistSession: true,
       },
     });
   } catch {
