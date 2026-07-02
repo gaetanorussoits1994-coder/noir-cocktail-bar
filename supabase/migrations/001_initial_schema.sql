@@ -29,7 +29,9 @@ $$;
 
 create table if not exists public.site_settings (
   id uuid primary key default gen_random_uuid(),
-  site_name text not null,
+  key text not null unique,
+  value text,
+  site_name text,
   tagline text,
   description text,
   phone text,
@@ -211,12 +213,34 @@ create table if not exists public.newsletter_subscribers (
 
 -- Compatibilità con una eventuale esecuzione successiva dello schema prototipo.
 alter table public.site_settings
+  add column if not exists key text,
+  add column if not exists value text,
   add column if not exists city text,
   add column if not exists logo_url text,
   add column if not exists hero_title text,
   add column if not exists hero_subtitle text,
   add column if not exists hero_description text,
   add column if not exists hero_background_url text;
+
+-- Backfill compatibile con l'eventuale schema prototipo privo di key.
+with ranked_settings as (
+  select
+    id,
+    row_number() over (order by created_at, id) as position
+  from public.site_settings
+  where key is null
+)
+update public.site_settings as settings
+set key = case
+  when ranked.position = 1 then 'legacy-general'
+  else 'legacy-' || settings.id::text
+end
+from ranked_settings as ranked
+where settings.id = ranked.id;
+
+alter table public.site_settings
+  alter column key set not null,
+  alter column site_name drop not null;
 
 alter table public.cocktails
   add column if not exists category_id uuid
@@ -243,9 +267,11 @@ alter table public.newsletter_subscribers
   add column if not exists is_active boolean not null default true,
   add column if not exists updated_at timestamptz not null default now();
 
--- site_settings è una tabella singleton.
-create unique index if not exists idx_site_settings_singleton
-  on public.site_settings ((true));
+-- site_settings usa chiavi univoche e può contenere più impostazioni.
+drop index if exists public.idx_site_settings_singleton;
+
+create unique index if not exists idx_site_settings_key
+  on public.site_settings (key);
 
 -- ============================================================================
 -- Indici
@@ -522,7 +548,8 @@ to anon, authenticated;
 -- ============================================================================
 
 insert into public.site_settings (
-  id,
+  key,
+  value,
   site_name,
   tagline,
   description,
@@ -538,10 +565,12 @@ insert into public.site_settings (
   hero_title,
   hero_subtitle,
   hero_description,
-  hero_background_url
+  hero_background_url,
+  created_at
 )
 values (
-  '00000000-0000-4000-8000-000000000001',
+  'site_name',
+  'Noir Cocktail Bar',
   'Noir Cocktail Bar',
   'Premium Cocktail Experience.',
   'Cocktail d’autore, atmosfera ricercata e dettagli pensati per trasformare ogni notte in un’esperienza da ricordare.',
@@ -557,9 +586,11 @@ values (
   'Noir Cocktail Bar',
   'Premium Cocktail Experience',
   'Un luogo dove mixology, atmosfera e dettagli si incontrano.',
-  null
+  null,
+  '2026-01-01 00:00:00+00'
 )
-on conflict (id) do update set
+on conflict (key) do update set
+  value = excluded.value,
   site_name = excluded.site_name,
   tagline = excluded.tagline,
   description = excluded.description,
@@ -575,7 +606,80 @@ on conflict (id) do update set
   hero_title = excluded.hero_title,
   hero_subtitle = excluded.hero_subtitle,
   hero_description = excluded.hero_description,
-  hero_background_url = excluded.hero_background_url;
+  hero_background_url = excluded.hero_background_url,
+  created_at = excluded.created_at;
+
+-- Impostazioni atomiche usate dalla futura gestione contenuti.
+insert into public.site_settings (key, value, created_at)
+values
+  (
+    'tagline',
+    'Premium Cocktail Experience.',
+    '2026-01-01 00:00:01+00'
+  ),
+  (
+    'description',
+    'Cocktail d’autore, atmosfera ricercata e dettagli pensati per trasformare ogni notte in un’esperienza da ricordare.',
+    '2026-01-01 00:00:02+00'
+  ),
+  (
+    'phone',
+    '+39 333 123 4567',
+    '2026-01-01 00:00:03+00'
+  ),
+  (
+    'email',
+    'info@noircocktailbar.it',
+    '2026-01-01 00:00:04+00'
+  ),
+  (
+    'whatsapp',
+    'https://wa.me/393331234567',
+    '2026-01-01 00:00:05+00'
+  ),
+  (
+    'address',
+    'Via Roma 24',
+    '2026-01-01 00:00:06+00'
+  ),
+  (
+    'city',
+    'Milano',
+    '2026-01-01 00:00:07+00'
+  ),
+  (
+    'opening_hours',
+    'Martedì - Domenica, 18:00 - 02:00',
+    '2026-01-01 00:00:08+00'
+  ),
+  (
+    'instagram_url',
+    'https://www.instagram.com/',
+    '2026-01-01 00:00:09+00'
+  ),
+  (
+    'facebook_url',
+    'https://www.facebook.com/',
+    '2026-01-01 00:00:10+00'
+  ),
+  (
+    'hero_title',
+    'Noir Cocktail Bar',
+    '2026-01-01 00:00:11+00'
+  ),
+  (
+    'hero_subtitle',
+    'Premium Cocktail Experience',
+    '2026-01-01 00:00:12+00'
+  ),
+  (
+    'hero_description',
+    'Un luogo dove mixology, atmosfera e dettagli si incontrano.',
+    '2026-01-01 00:00:13+00'
+  )
+on conflict (key) do update set
+  value = excluded.value,
+  created_at = excluded.created_at;
 
 insert into public.cocktail_categories (
   id,
