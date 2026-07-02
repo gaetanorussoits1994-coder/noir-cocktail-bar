@@ -5,21 +5,51 @@ import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 
-import { getSupabaseClient } from "@/lib/supabase";
+import { getSupabaseClient } from "@/lib/supabase/client";
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const supabase = getSupabaseClient();
+    let isMounted = true;
 
-    void supabase?.auth.getSession().then(({ data }) => {
-      if (data.session?.user) router.replace("/admin");
-    });
+    if (!supabase) {
+      setIsCheckingSession(false);
+      return;
+    }
+
+    if (
+      new URLSearchParams(window.location.search).get("reason") ===
+      "session_expired"
+    ) {
+      setError("La sessione è scaduta. Accedi nuovamente.");
+    }
+
+    void supabase.auth
+      .getUser()
+      .then(({ data }) => {
+        if (!isMounted) return;
+
+        if (data.user) {
+          router.replace("/admin");
+          return;
+        }
+
+        setIsCheckingSession(false);
+      })
+      .catch(() => {
+        if (isMounted) setIsCheckingSession(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [router]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -35,20 +65,27 @@ export default function AdminLoginPage() {
       return;
     }
 
-    const { error: signInError } =
-      await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
+    try {
+      const { data, error: signInError } =
+        await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
 
-    if (signInError) {
-      setError("Email o password non corrette.");
+      if (signInError || !data.session || !data.user) {
+        setError("Email o password non corrette.");
+        return;
+      }
+
+      router.replace("/admin");
+      router.refresh();
+    } catch {
+      setError(
+        "Impossibile contattare il servizio di autenticazione. Riprova tra poco.",
+      );
+    } finally {
       setIsSubmitting(false);
-      return;
     }
-
-    router.replace("/admin");
-    router.refresh();
   }
 
   return (
@@ -89,8 +126,9 @@ export default function AdminLoginPage() {
             <input
               autoComplete="email"
               className="w-full rounded-xl border border-white/10 bg-black/35 px-4 py-3.5 text-sm outline-none transition placeholder:text-white/25 focus:border-gold/60 focus:ring-2 focus:ring-gold/10"
+              disabled={isCheckingSession || isSubmitting}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="admin@noir.it"
+              placeholder="nome@dominio.it"
               required
               type="email"
               value={email}
@@ -109,6 +147,7 @@ export default function AdminLoginPage() {
               <input
                 autoComplete="current-password"
                 className="w-full rounded-xl border border-white/10 bg-black/35 py-3.5 pr-4 pl-11 text-sm outline-none transition placeholder:text-white/25 focus:border-gold/60 focus:ring-2 focus:ring-gold/10"
+                disabled={isCheckingSession || isSubmitting}
                 minLength={6}
                 onChange={(event) => setPassword(event.target.value)}
                 placeholder="••••••••"
@@ -127,11 +166,15 @@ export default function AdminLoginPage() {
 
           <button
             className="mt-1 inline-flex items-center justify-center gap-2 rounded-xl border border-gold bg-gold px-5 py-3.5 text-sm font-semibold text-background-primary shadow-gold transition hover:bg-gold-light disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={isSubmitting}
+            disabled={isCheckingSession || isSubmitting}
             type="submit"
           >
-            {isSubmitting ? "Accesso in corso..." : "Accedi"}
-            {!isSubmitting && <ArrowRight size={17} />}
+            {isCheckingSession
+              ? "Verifica sessione..."
+              : isSubmitting
+                ? "Accesso in corso..."
+                : "Accedi"}
+            {!isCheckingSession && !isSubmitting && <ArrowRight size={17} />}
           </button>
         </form>
       </section>
