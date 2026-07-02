@@ -3,9 +3,14 @@ import {
   type SupabaseClient,
 } from "@supabase/supabase-js";
 
-let supabaseClient: SupabaseClient | null | undefined;
+import type { Database } from "./supabase/types";
 
-export function getSupabaseClient(): SupabaseClient | null {
+let supabaseClient:
+  | SupabaseClient<Database>
+  | null
+  | undefined;
+
+export function getSupabaseClient(): SupabaseClient<Database> | null {
   if (supabaseClient !== undefined) {
     return supabaseClient;
   }
@@ -19,7 +24,7 @@ export function getSupabaseClient(): SupabaseClient | null {
   }
 
   try {
-    supabaseClient = createClient(url, anonKey, {
+    supabaseClient = createClient<Database>(url, anonKey, {
       auth: {
         autoRefreshToken: false,
         detectSessionInUrl: false,
