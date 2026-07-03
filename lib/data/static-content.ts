@@ -37,6 +37,135 @@ export type ContentLink = {
   href: string;
 };
 
+export type PublicMenuItem = {
+  id: string;
+  name: string;
+  description: string;
+  ingredients: string;
+  price: number | null;
+  imageUrl: string | null;
+  tags: string[];
+  isFeatured: boolean;
+  sortOrder: number;
+};
+
+export type PublicMenuCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  sortOrder: number;
+  items: PublicMenuItem[];
+};
+
+export const fallbackMenu = [
+  {
+    id: "fallback-signature",
+    name: "Cocktail Signature",
+    slug: "cocktail-signature",
+    description: "Le creazioni originali firmate Noir.",
+    sortOrder: 1,
+    items: [
+      {
+        id: "fallback-noir-negroni",
+        name: "Noir Negroni",
+        description:
+          "Un classico intenso reinterpretato con note agrumate e una profondità vellutata.",
+        ingredients: "",
+        price: 18,
+        imageUrl: "/images/noir-negroni.png",
+        tags: ["Signature"],
+        isFeatured: true,
+        sortOrder: 1,
+      },
+      {
+        id: "fallback-golden-smoke",
+        name: "Golden Smoke",
+        description:
+          "Bourbon, sfumature affumicate e accenti aromatici in un equilibrio caldo e avvolgente.",
+        ingredients: "",
+        price: 20,
+        imageUrl: "/images/golden-smoke.png",
+        tags: ["Signature"],
+        isFeatured: true,
+        sortOrder: 2,
+      },
+      {
+        id: "fallback-velvet-night",
+        name: "Velvet Night",
+        description:
+          "Frutti scuri e delicate note floreali per un cocktail morbido, elegante e notturno.",
+        ingredients: "",
+        price: 17,
+        imageUrl: "/images/velvet-night.png",
+        tags: ["Signature"],
+        isFeatured: true,
+        sortOrder: 3,
+      },
+    ],
+  },
+  {
+    id: "fallback-premium",
+    name: "Alcolici Premium",
+    slug: "alcolici-premium",
+    description: "Una selezione di distillati ed etichette premium.",
+    sortOrder: 2,
+    items: [
+      {
+        id: "fallback-premium-selection",
+        name: "Selezione Premium",
+        description: "Etichette selezionate, servite lisce o con ghiaccio.",
+        ingredients: "",
+        price: null,
+        imageUrl: null,
+        tags: [],
+        isFeatured: false,
+        sortOrder: 1,
+      },
+    ],
+  },
+  {
+    id: "fallback-aperitivi",
+    name: "Aperitivi Noir",
+    slug: "aperitivi-noir",
+    description: "Aperitivi pensati per iniziare la serata.",
+    sortOrder: 3,
+    items: [
+      {
+        id: "fallback-aperitivo",
+        name: "Aperitivo Noir",
+        description: "La proposta della casa, accompagnata da piccoli assaggi.",
+        ingredients: "",
+        price: null,
+        imageUrl: null,
+        tags: [],
+        isFeatured: false,
+        sortOrder: 1,
+      },
+    ],
+  },
+  {
+    id: "fallback-shots",
+    name: "Cicchetti / Shottini",
+    slug: "cicchetti-shottini",
+    description: "Shot e piccoli assaggi dal carattere deciso.",
+    sortOrder: 4,
+    items: [
+      {
+        id: "fallback-shot-selection",
+        name: "Selezione Noir",
+        description: "Una scelta di cicchetti classici e creazioni della casa.",
+        ingredients: "",
+        price: null,
+        imageUrl: null,
+        tags: [],
+        isFeatured: false,
+        sortOrder: 1,
+      },
+    ],
+  },
+] satisfies PublicMenuCategory[];
+
 export const events = [
   {
     title: "Jazz Night",
