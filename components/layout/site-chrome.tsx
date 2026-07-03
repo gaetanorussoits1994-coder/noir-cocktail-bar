@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { Navbar } from "@/components/layout/navbar";
+import { ReservationModalProvider } from "@/components/providers/reservation-modal-provider";
 import { SmoothScrollProvider } from "@/components/providers/smooth-scroll-provider";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 
@@ -20,9 +21,11 @@ export function SiteChrome({ children }: SiteChromeProps) {
 
   return (
     <SmoothScrollProvider>
-      <ScrollProgress />
-      <Navbar />
-      {children}
+      <ReservationModalProvider>
+        <ScrollProgress />
+        <Navbar />
+        {children}
+      </ReservationModalProvider>
     </SmoothScrollProvider>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Trash2, X } from "lucide-react";
+import { Check, MessageCircle, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import {
@@ -13,8 +13,20 @@ import {
   secondaryButtonClass,
 } from "@/components/admin/admin-ui";
 import { getSupabaseClient } from "@/lib/supabase";
-import type { BookingRow } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
+
+type AdminReservationRow = {
+  id: string;
+  customer_name: string;
+  customer_phone: string;
+  customer_email: string | null;
+  reservation_date: string;
+  reservation_time: string;
+  guests: number;
+  notes: string | null;
+  status: "pending" | "confirmed" | "rejected" | "cancelled";
+  created_at: string;
+};
 
 const dateFormatter = new Intl.DateTimeFormat("it-IT", {
   day: "2-digit",
@@ -30,7 +42,7 @@ const dateTimeFormatter = new Intl.DateTimeFormat("it-IT", {
   minute: "2-digit",
 });
 
-const statusStyles: Record<BookingRow["status"], string> = {
+const statusStyles: Record<AdminReservationRow["status"], string> = {
   pending: "border-amber-300/25 bg-amber-400/10 text-amber-200",
   confirmed: "border-emerald-300/25 bg-emerald-400/10 text-emerald-200",
   rejected: "border-red-300/25 bg-red-400/10 text-red-200",
@@ -41,8 +53,21 @@ function formatDate(value: string) {
   return dateFormatter.format(new Date(`${value}T00:00:00`));
 }
 
+function getWhatsAppHref(booking: AdminReservationRow) {
+  let phone = booking.customer_phone.replace(/\D/g, "");
+  if (phone.startsWith("00")) phone = phone.slice(2);
+  if (phone.length === 10 && phone.startsWith("3")) phone = `39${phone}`;
+
+  const message =
+    booking.status === "confirmed"
+      ? `Ciao ${booking.customer_name}, la tua prenotazione da Noir Cocktail Bar per il giorno ${formatDate(booking.reservation_date)} alle ${booking.reservation_time.slice(0, 5)} per ${booking.guests} persone è confermata. Ti aspettiamo.`
+      : `Ciao ${booking.customer_name}, ci dispiace ma nella fascia oraria scelta non abbiamo disponibilità. Ti invitiamo a scegliere un altro orario o a contattarci per maggiori informazioni.`;
+
+  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+}
+
 export default function AdminBookingsPage() {
-  const [bookings, setBookings] = useState<BookingRow[]>([]);
+  const [bookings, setBookings] = useState<AdminReservationRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeId, setActiveId] = useState("");
   const [error, setError] = useState("");
@@ -57,15 +82,25 @@ export default function AdminBookingsPage() {
     }
 
     const { data, error: queryError } = await supabase
-      .from("bookings")
-      .select("*")
-      .order("booking_date", { ascending: true })
-      .order("booking_time", { ascending: true });
+      .from("reservations")
+      .select(
+        "id, customer_name, customer_phone, customer_email, reservation_date, reservation_time, guests, notes, status, created_at",
+      )
+      .order("created_at", { ascending: false });
 
     if (queryError) {
+      console.error("SUPABASE_RESERVATIONS_SELECT_ERROR", {
+        message: queryError.message,
+        details: queryError.details,
+        hint: queryError.hint,
+        code: queryError.code,
+      });
       setError(queryError.message);
     } else {
-      setBookings(data ?? []);
+      if (!data?.length) {
+        console.log("SUPABASE_RESERVATIONS_SELECT_EMPTY", data);
+      }
+      setBookings((data ?? []) as AdminReservationRow[]);
       setError("");
     }
 
@@ -74,11 +109,25 @@ export default function AdminBookingsPage() {
 
   useEffect(() => {
     void loadBookings();
+
+    const supabase = getSupabaseClient();
+    const channel = supabase
+      ?.channel("admin-reservations")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "reservations" },
+        () => void loadBookings(),
+      )
+      .subscribe();
+
+    return () => {
+      if (supabase && channel) void supabase.removeChannel(channel);
+    };
   }, [loadBookings]);
 
   async function updateStatus(
     id: string,
-    status: BookingRow["status"],
+    status: "confirmed" | "rejected",
   ) {
     const supabase = getSupabaseClient();
     if (!supabase) return;
@@ -87,7 +136,7 @@ export default function AdminBookingsPage() {
     setError("");
 
     const { error: updateError } = await supabase
-      .from("bookings")
+      .from("reservations")
       .update({ status })
       .eq("id", id);
 
@@ -114,7 +163,7 @@ export default function AdminBookingsPage() {
 
     setActiveId(id);
     const { error: deleteError } = await supabase
-      .from("bookings")
+      .from("reservations")
       .delete()
       .eq("id", id);
 
@@ -129,7 +178,7 @@ export default function AdminBookingsPage() {
     setActiveId("");
   }
 
-  function renderActions(booking: BookingRow) {
+  function renderActions(booking: AdminReservationRow) {
     const isBusy = activeId === booking.id;
 
     return (
@@ -152,14 +201,21 @@ export default function AdminBookingsPage() {
           <X size={14} />
           Rifiuta
         </button>
-        <button
-          className={secondaryButtonClass}
-          disabled={isBusy || booking.status === "cancelled"}
-          onClick={() => updateStatus(booking.id, "cancelled")}
-          type="button"
-        >
-          Cancella
-        </button>
+        {(booking.status === "confirmed" ||
+          booking.status === "rejected") && (
+          <a
+            className={cn(
+              secondaryButtonClass,
+              "border-emerald-300/20 text-emerald-100",
+            )}
+            href={getWhatsAppHref(booking)}
+            rel="noreferrer"
+            target="_blank"
+          >
+            <MessageCircle size={14} />
+            WhatsApp
+          </a>
+        )}
         <button
           aria-label="Elimina prenotazione"
           className={dangerButtonClass}
@@ -198,11 +254,11 @@ export default function AdminBookingsPage() {
                       {booking.customer_name}
                     </h2>
                     <p className="mt-1 text-sm text-noir-gray">
-                      {booking.phone}
+                      {booking.customer_phone}
                     </p>
-                    {booking.email && (
+                    {booking.customer_email && (
                       <p className="mt-1 break-all text-xs text-noir-gray">
-                        {booking.email}
+                        {booking.customer_email}
                       </p>
                     )}
                   </div>
@@ -219,11 +275,15 @@ export default function AdminBookingsPage() {
                 <dl className="mt-5 grid grid-cols-2 gap-4 border-y border-white/10 py-4 text-sm">
                   <div>
                     <dt className="text-xs text-noir-gray">Data</dt>
-                    <dd className="mt-1">{formatDate(booking.booking_date)}</dd>
+                    <dd className="mt-1">
+                      {formatDate(booking.reservation_date)}
+                    </dd>
                   </div>
                   <div>
                     <dt className="text-xs text-noir-gray">Ora</dt>
-                    <dd className="mt-1">{booking.booking_time.slice(0, 5)}</dd>
+                    <dd className="mt-1">
+                      {booking.reservation_time.slice(0, 5)}
+                    </dd>
                   </div>
                   <div>
                     <dt className="text-xs text-noir-gray">Ospiti</dt>
@@ -277,14 +337,18 @@ export default function AdminBookingsPage() {
                         {booking.customer_name}
                       </td>
                       <td className="px-5 py-4 text-noir-gray">
-                        <span className="block">{booking.phone}</span>
-                        <span className="mt-1 block">{booking.email || "—"}</span>
+                        <span className="block">
+                          {booking.customer_phone}
+                        </span>
+                        <span className="mt-1 block">
+                          {booking.customer_email || "—"}
+                        </span>
                       </td>
                       <td className="px-5 py-4">{booking.guests}</td>
                       <td className="px-5 py-4 whitespace-nowrap">
-                        {formatDate(booking.booking_date)}
+                        {formatDate(booking.reservation_date)}
                         <span className="ml-2 text-noir-gray">
-                          {booking.booking_time.slice(0, 5)}
+                          {booking.reservation_time.slice(0, 5)}
                         </span>
                       </td>
                       <td className="px-5 py-4">

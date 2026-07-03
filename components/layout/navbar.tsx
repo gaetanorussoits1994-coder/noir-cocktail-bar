@@ -5,6 +5,7 @@ import { Menu as MenuIcon, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { PremiumButton } from "@/components/ui/premium-button";
+import { useReservationModal } from "@/components/providers/reservation-modal-provider";
 import { cn } from "@/lib/utils";
 
 const navigation = [
@@ -17,6 +18,7 @@ const navigation = [
 ];
 
 export function Navbar() {
+  const { openReservation } = useReservationModal();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -83,7 +85,11 @@ export function Navbar() {
 
           <PremiumButton
             className="hidden rounded-card border border-gold bg-gold px-5 py-2.5 text-xs font-semibold tracking-[0.08em] text-background-primary uppercase shadow-gold transition-colors duration-300 hover:bg-gold-light lg:inline-flex"
-            href="#prenotazioni"
+            href="#reservation-form"
+            onClick={(event) => {
+              event.preventDefault();
+              openReservation();
+            }}
           >
             Prenota un Tavolo
           </PremiumButton>
@@ -155,8 +161,12 @@ export function Navbar() {
 
               <PremiumButton
                 className="mt-auto rounded-card border border-gold bg-gold px-6 py-4 text-center text-sm font-semibold tracking-[0.08em] text-background-primary uppercase shadow-gold"
-                href="#prenotazioni"
-                onClick={closeMenu}
+                href="#reservation-form"
+                onClick={(event) => {
+                  event.preventDefault();
+                  closeMenu();
+                  openReservation();
+                }}
               >
                 Prenota un Tavolo
               </PremiumButton>

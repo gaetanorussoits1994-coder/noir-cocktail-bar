@@ -260,7 +260,7 @@ export const contactInfo = {
       label: "Martedì - Domenica, 18:00 - 02:00",
     },
   ] satisfies ContactDetail[],
-  bookingHref: "#prenotazioni",
+  bookingHref: "#reservation-form",
   whatsappHref: "https://wa.me/393331234567",
   location: {
     street: "Via Roma 24",

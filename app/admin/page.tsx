@@ -81,11 +81,11 @@ export default function AdminDashboardPage() {
     async function loadStats() {
       const results = await Promise.all([
         client
-          .from("bookings")
+          .from("reservations")
           .select("id", { count: "exact", head: true })
           .eq("status", "pending"),
         client
-          .from("bookings")
+          .from("reservations")
           .select("id", { count: "exact", head: true })
           .eq("status", "confirmed"),
         client

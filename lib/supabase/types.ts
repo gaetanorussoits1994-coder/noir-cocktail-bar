@@ -159,13 +159,15 @@ export type NewsletterSubscriberRow = {
 export type ReservationRow = {
   id: string;
   customer_name: string;
-  customer_phone: string;
+  phone: string;
+  email: string | null;
+  customer_phone: string | null;
   customer_email: string | null;
   reservation_date: string;
   reservation_time: string;
   guests: number;
   notes: string | null;
-  status: "pending" | "confirmed" | "cancelled";
+  status: "pending" | "confirmed" | "rejected" | "cancelled";
   created_at: string;
   updated_at: string;
 };
@@ -261,7 +263,7 @@ export type Database = {
       reservations: TableDefinition<
         ReservationRow,
         | "customer_name"
-        | "customer_phone"
+        | "phone"
         | "reservation_date"
         | "reservation_time"
         | "guests"

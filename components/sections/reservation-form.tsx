@@ -38,6 +38,32 @@ function getLocalDate() {
   return new Date(now.getTime() - offset).toISOString().slice(0, 10);
 }
 
+function normalizeReservationDate(value: string) {
+  const trimmedValue = value.trim();
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmedValue)) {
+    return trimmedValue;
+  }
+
+  const italianDate = trimmedValue.match(
+    /^(\d{2})\/(\d{2})\/(\d{4})$/,
+  );
+
+  if (!italianDate) {
+    return trimmedValue;
+  }
+
+  const [, day, month, year] = italianDate;
+  return `${year}-${month}-${day}`;
+}
+
+function normalizeReservationTime(value: string) {
+  const trimmedValue = value.trim();
+  return /^\d{2}:\d{2}$/.test(trimmedValue)
+    ? `${trimmedValue}:00`
+    : trimmedValue;
+}
+
 type ReservationFormProps = {
   id?: string;
 };
@@ -60,6 +86,7 @@ export function ReservationForm({ id = "reservation-form" }: ReservationFormProp
   function validateForm() {
     const phoneDigits = form.phone.replace(/\D/g, "");
     const guests = Number(form.guests);
+    const reservationDate = normalizeReservationDate(form.reservationDate);
 
     if (form.customerName.trim().length < 2) {
       return "Inserisci un nome valido.";
@@ -70,7 +97,7 @@ export function ReservationForm({ id = "reservation-form" }: ReservationFormProp
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       return "Inserisci un indirizzo email valido.";
     }
-    if (!form.reservationDate || form.reservationDate < minimumDate) {
+    if (!reservationDate || reservationDate < minimumDate) {
       return "Seleziona una data valida, da oggi in avanti.";
     }
     if (!form.reservationTime) {
@@ -102,28 +129,49 @@ export function ReservationForm({ id = "reservation-form" }: ReservationFormProp
     setIsSubmitting(true);
     setError("");
 
-    const { error: insertError } = await supabase.from("reservations").insert({
-      customer_name: form.customerName.trim(),
+    const formData = {
+      name: form.customerName.trim(),
       phone: form.phone.trim(),
-      email: form.email.trim() || null,
-      reservation_date: form.reservationDate,
-      reservation_time: form.reservationTime,
-      guests: Number(form.guests),
-      notes: form.notes.trim() || null,
-      status: "pending",
-    });
+      email: form.email.trim(),
+      date: form.reservationDate,
+      time: normalizeReservationTime(form.reservationTime).slice(0, 5),
+      guests: form.guests,
+      notes: form.notes.trim(),
+    };
+    const formattedDate = normalizeReservationDate(formData.date);
 
-    setIsSubmitting(false);
+    try {
+      const { data, error } = await supabase
+        .from("reservations")
+        .insert([
+          {
+            customer_name: formData.name,
+            customer_phone: formData.phone,
+            customer_email: formData.email || null,
+            reservation_date: formattedDate,
+            reservation_time: `${formData.time}:00`,
+            guests: Number(formData.guests),
+            notes: formData.notes || null,
+            status: "pending",
+          },
+        ] as never)
+        .select();
 
-    if (insertError) {
+      if (error) {
+        console.error("SUPABASE_INSERT_ERROR", error.message, error.details, error.hint, error.code);
+        throw error;
+      }
+
+      console.log("SUPABASE_INSERT_OK", data);
+      setForm(initialForm);
+      setIsSuccess(true);
+    } catch {
       setError(
         "Non è stato possibile inviare la richiesta. Riprova tra poco o contattaci telefonicamente.",
       );
-      return;
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setForm(initialForm);
-    setIsSuccess(true);
   }
 
   if (isSuccess) {
