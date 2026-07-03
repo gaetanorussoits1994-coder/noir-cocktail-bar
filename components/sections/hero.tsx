@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { PremiumButton } from "@/components/ui/premium-button";
+import { useReservationModal } from "@/components/providers/reservation-modal-provider";
 import { getSupabaseClient } from "@/lib/supabase";
 
 type HeroContent = {
@@ -64,6 +65,7 @@ const itemVariants: Variants = {
 };
 
 export function Hero() {
+  const { openReservation } = useReservationModal();
   const [content, setContent] =
     useState<HeroContent>(initialHeroContent);
 
@@ -195,7 +197,14 @@ export function Hero() {
           <PremiumButton href="#menu">
             Scopri il Menu
           </PremiumButton>
-          <PremiumButton href="#reservation-form" variant="secondary">
+          <PremiumButton
+            href="#reservation-form"
+            onClick={(event) => {
+              event.preventDefault();
+              openReservation();
+            }}
+            variant="secondary"
+          >
             Prenota un Tavolo
           </PremiumButton>
         </motion.div>

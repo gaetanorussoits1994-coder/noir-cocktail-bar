@@ -38,7 +38,11 @@ function getLocalDate() {
   return new Date(now.getTime() - offset).toISOString().slice(0, 10);
 }
 
-export function ReservationForm() {
+type ReservationFormProps = {
+  id?: string;
+};
+
+export function ReservationForm({ id = "reservation-form" }: ReservationFormProps) {
   const [form, setForm] = useState(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -126,7 +130,7 @@ export function ReservationForm() {
     return (
       <div
         className="flex min-h-[32rem] flex-col items-center justify-center rounded-card border border-gold/20 bg-background-secondary p-8 text-center shadow-gold"
-        id="reservation-form"
+        id={id}
         role="status"
       >
         <span className="flex size-16 items-center justify-center rounded-full border border-emerald-300/25 bg-emerald-400/10 text-emerald-200">
@@ -153,7 +157,7 @@ export function ReservationForm() {
   return (
     <form
       className="rounded-card border border-gold/20 bg-background-secondary p-5 shadow-gold sm:p-7"
-      id="reservation-form"
+      id={id}
       noValidate
       onSubmit={handleSubmit}
     >

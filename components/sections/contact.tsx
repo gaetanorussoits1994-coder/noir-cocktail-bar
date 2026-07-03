@@ -11,6 +11,7 @@ import {
 
 import { PremiumButton } from "@/components/ui/premium-button";
 import { SectionTitle } from "@/components/ui/section-title";
+import { useReservationModal } from "@/components/providers/reservation-modal-provider";
 import { contactInfo } from "@/lib/data/static-content";
 import { ReservationForm } from "./reservation-form";
 
@@ -43,6 +44,7 @@ const itemVariants: Variants = {
 };
 
 export function Contact() {
+  const { openReservation } = useReservationModal();
   return (
     <section
       className="relative w-full max-w-full overflow-hidden bg-background-primary px-4 py-24 sm:px-6 sm:py-32 lg:px-8"
@@ -109,7 +111,13 @@ export function Contact() {
             className="mt-10 flex flex-col gap-4 sm:flex-row"
             variants={itemVariants}
           >
-            <PremiumButton href={contactInfo.bookingHref}>
+            <PremiumButton
+              href={contactInfo.bookingHref}
+              onClick={(event) => {
+                event.preventDefault();
+                openReservation();
+              }}
+            >
               Prenota un Tavolo
             </PremiumButton>
             <PremiumButton
