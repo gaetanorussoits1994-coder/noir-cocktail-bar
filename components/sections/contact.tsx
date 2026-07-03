@@ -12,6 +12,7 @@ import {
 import { PremiumButton } from "@/components/ui/premium-button";
 import { SectionTitle } from "@/components/ui/section-title";
 import { contactInfo } from "@/lib/data/static-content";
+import { ReservationForm } from "./reservation-form";
 
 const contactIcons = {
   address: MapPin,
@@ -125,49 +126,13 @@ export function Contact() {
         </motion.div>
 
         <motion.div
-          className="relative min-h-[30rem] overflow-hidden rounded-card border border-gold/20 bg-background-secondary shadow-gold"
+          className="scroll-mt-28"
           initial={{ opacity: 0, y: 32 }}
           transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
           viewport={{ amount: 0.2, once: true }}
           whileInView={{ opacity: 1, y: 0 }}
         >
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:48px_48px]"
-          />
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(200,169,106,0.12),transparent_55%)]"
-          />
-          <div
-            aria-hidden="true"
-            className="absolute top-[22%] left-0 h-px w-[70%] rotate-12 bg-gold/15"
-          />
-          <div
-            aria-hidden="true"
-            className="absolute right-0 bottom-[25%] h-px w-[70%] -rotate-12 bg-gold/15"
-          />
-
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex flex-col items-center text-center">
-              <span className="flex size-16 items-center justify-center rounded-full border border-gold/30 bg-gold/10 text-gold shadow-gold backdrop-blur-sm">
-                <MapPin aria-hidden="true" size={25} strokeWidth={1.5} />
-              </span>
-              <p className="mt-5 font-display text-3xl text-gold-light">
-                {contactInfo.location.street}
-              </p>
-              <p className="mt-1 text-xs font-medium tracking-[0.2em] text-noir-gray uppercase">
-                {contactInfo.location.city}
-              </p>
-            </div>
-          </div>
-
-          <div className="absolute right-5 bottom-5 left-5 flex items-center justify-between border-t border-border pt-4">
-            <span className="text-[0.6rem] font-medium tracking-[0.18em] text-noir-gray uppercase">
-              Noir Location
-            </span>
-            <span className="size-1.5 rounded-full bg-gold" />
-          </div>
+          <ReservationForm />
         </motion.div>
       </div>
     </section>

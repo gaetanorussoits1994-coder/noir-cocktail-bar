@@ -195,7 +195,7 @@ export function Hero() {
           <PremiumButton href="#menu">
             Scopri il Menu
           </PremiumButton>
-          <PremiumButton href="#prenotazioni" variant="secondary">
+          <PremiumButton href="#reservation-form" variant="secondary">
             Prenota un Tavolo
           </PremiumButton>
         </motion.div>
