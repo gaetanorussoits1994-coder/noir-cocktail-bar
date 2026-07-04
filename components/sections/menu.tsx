@@ -1,24 +1,51 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Star } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { ArrowUpRight, Star } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { PremiumButton } from "@/components/ui/premium-button";
 import { SectionTitle } from "@/components/ui/section-title";
-import {
-  fallbackMenu,
-  type PublicMenuCategory,
-} from "@/lib/data/static-content";
+import { fallbackMenu } from "@/lib/data/static-content";
 import { getSupabaseClient } from "@/lib/supabase";
-import type {
-  MenuCategoryRow,
-  MenuItemRow,
-} from "@/lib/supabase/types";
+import { cn } from "@/lib/utils";
+
+type PublicCocktail = {
+  id: string;
+  name: string;
+  slug: string;
+  category: string;
+  description: string | null;
+  price: number | null;
+  image_url: string | null;
+  ingredients: string | null;
+  alcohol_level: string | null;
+  is_featured: boolean;
+  is_available: boolean;
+  display_order: number;
+};
+
+type MenuStatus = "loading" | "live" | "fallback";
+
+const fallbackCocktails: PublicCocktail[] = fallbackMenu.flatMap((category) =>
+  category.items.map((item) => ({
+    id: item.id,
+    name: item.name,
+    slug: item.id.replace(/^fallback-/, ""),
+    category: category.name,
+    description: item.description || null,
+    price: item.price,
+    image_url: item.imageUrl,
+    ingredients: item.ingredients || null,
+    alcohol_level: null,
+    is_featured: item.isFeatured,
+    is_available: true,
+    display_order: item.sortOrder,
+  })),
+);
 
 function formatPrice(price: number | null) {
-  if (price === null) {
-    return "Su richiesta";
-  }
+  if (price === null) return "Su richiesta";
 
   return new Intl.NumberFormat("it-IT", {
     style: "currency",
@@ -28,117 +55,108 @@ function formatPrice(price: number | null) {
   }).format(price);
 }
 
-function buildPublicMenu(
-  categories: MenuCategoryRow[],
-  items: MenuItemRow[],
-): PublicMenuCategory[] {
-  const itemsByCategory = new Map<string, MenuItemRow[]>();
-
-  for (const item of items) {
-    if (!item.category_id) continue;
-    const categoryItems = itemsByCategory.get(item.category_id) ?? [];
-    categoryItems.push(item);
-    itemsByCategory.set(item.category_id, categoryItems);
-  }
-
-  return categories
-    .sort((first, second) => first.sort_order - second.sort_order)
-    .map((category) => ({
-      id: category.id,
-      name: category.name,
-      slug: category.slug,
-      description: category.description?.trim() || "",
-      sortOrder: category.sort_order,
-      items: (itemsByCategory.get(category.id) ?? [])
-        .sort((first, second) => first.sort_order - second.sort_order)
-        .map((item) => ({
-          id: item.id,
-          name: item.name,
-          description: item.description?.trim() || "",
-          ingredients: item.ingredients?.trim() || "",
-          price: item.price,
-          imageUrl: item.image_url?.trim() || null,
-          tags: item.tags,
-          isFeatured: item.is_featured,
-          sortOrder: item.sort_order,
-        })),
-    }));
+function logMenuError(error: {
+  message: string;
+  details?: string;
+  hint?: string;
+  code?: string;
+}) {
+  console.error("[PublicMenu] Supabase select error", {
+    message: error.message,
+    details: error.details,
+    hint: error.hint,
+    code: error.code,
+  });
 }
 
-type MenuStatus = "loading" | "live" | "fallback";
+type MenuProps = {
+  featuredOnly?: boolean;
+  standalone?: boolean;
+};
 
-export function Menu() {
-  const [categories, setCategories] =
-    useState<PublicMenuCategory[]>(fallbackMenu);
+export function Menu({
+  featuredOnly = true,
+  standalone = false,
+}: MenuProps) {
+  const fallbackItems = useMemo(
+    () =>
+      featuredOnly
+        ? fallbackCocktails.filter((item) => item.is_featured)
+        : fallbackCocktails,
+    [featuredOnly],
+  );
+  const [items, setItems] = useState<PublicCocktail[]>(fallbackItems);
   const [status, setStatus] = useState<MenuStatus>("loading");
   const [fallbackMessage, setFallbackMessage] = useState("");
 
-  const loadMenu = useCallback(async (isCurrent: () => boolean) => {
-    const supabase = getSupabaseClient();
+  const loadMenu = useCallback(
+    async (isCurrent: () => boolean) => {
+      const supabase = getSupabaseClient();
 
-    if (!supabase) {
-      if (isCurrent()) {
-        setStatus("fallback");
-        setFallbackMessage(
-          "Menu online non disponibile: mostriamo la selezione Noir.",
-        );
+      if (!supabase) {
+        if (isCurrent()) {
+          setItems(fallbackItems);
+          setStatus("fallback");
+          setFallbackMessage(
+            "Menu online non disponibile: mostriamo la selezione Noir.",
+          );
+        }
+        return;
       }
-      return;
-    }
 
-    try {
-      const [categoriesResult, itemsResult] = await Promise.all([
-        supabase
-          .from("menu_categories")
-          .select("*")
-          .eq("is_active", true)
-          .order("sort_order", { ascending: true }),
-        supabase
+      try {
+        let query = supabase
           .from("menu_items")
-          .select("*")
+          .select(
+            "id, name, slug, category, description, price, image_url, ingredients, alcohol_level, is_featured, is_available, display_order",
+          )
           .eq("is_available", true)
-          .order("sort_order", { ascending: true }),
-      ]);
+          .order("display_order", { ascending: true })
+          .order("created_at", { ascending: true });
 
-      if (!isCurrent()) return;
+        if (featuredOnly) {
+          query = query.eq("is_featured", true);
+        }
 
-      const queryError = categoriesResult.error || itemsResult.error;
-      if (queryError) {
-        setCategories(fallbackMenu);
+        const { data, error } = await query;
+        if (!isCurrent()) return;
+
+        if (error) {
+          logMenuError(error);
+          setItems(fallbackItems);
+          setStatus("fallback");
+          setFallbackMessage(
+            "Il menu live è momentaneamente non disponibile. Ti mostriamo la selezione Noir.",
+          );
+          return;
+        }
+
+        if (!data?.length) {
+          setItems(fallbackItems);
+          setStatus("fallback");
+          setFallbackMessage(
+            featuredOnly
+              ? "Le nuove creazioni Noir sono in arrivo."
+              : "Il nuovo menu è in preparazione. Nel frattempo, scopri la selezione Noir.",
+          );
+          return;
+        }
+
+        setItems(data as PublicCocktail[]);
+        setStatus("live");
+        setFallbackMessage("");
+      } catch (unexpectedError) {
+        console.error("[PublicMenu] Unexpected error", unexpectedError);
+        if (!isCurrent()) return;
+        setItems(fallbackItems);
         setStatus("fallback");
         setFallbackMessage(
           "Il menu live è momentaneamente non disponibile. Ti mostriamo la selezione Noir.",
         );
-        return;
       }
-
-      const publicMenu = buildPublicMenu(
-        categoriesResult.data ?? [],
-        itemsResult.data ?? [],
-      );
-      const hasItems = publicMenu.some((category) => category.items.length > 0);
-
-      if (!hasItems) {
-        setCategories(fallbackMenu);
-        setStatus("fallback");
-        setFallbackMessage(
-          "Il nuovo menu è in preparazione. Nel frattempo, scopri la selezione Noir.",
-        );
-        return;
-      }
-
-      setCategories(publicMenu);
-      setStatus("live");
-      setFallbackMessage("");
-    } catch {
-      if (!isCurrent()) return;
-      setCategories(fallbackMenu);
-      setStatus("fallback");
-      setFallbackMessage(
-        "Il menu live è momentaneamente non disponibile. Ti mostriamo la selezione Noir.",
-      );
-    }
-  }, []);
+    },
+    [fallbackItems, featuredOnly],
+  );
 
   useEffect(() => {
     const supabase = getSupabaseClient();
@@ -148,12 +166,7 @@ export function Menu() {
     void loadMenu(isCurrent);
 
     const channel = supabase
-      ?.channel("public-menu")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "menu_categories" },
-        () => void loadMenu(isCurrent),
-      )
+      ?.channel(featuredOnly ? "home-featured-menu" : "public-full-menu")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "menu_items" },
@@ -165,36 +178,110 @@ export function Menu() {
       isMounted = false;
       if (supabase && channel) void supabase.removeChannel(channel);
     };
-  }, [loadMenu]);
+  }, [featuredOnly, loadMenu]);
+
+  const groupedItems = useMemo(() => {
+    const groups = new Map<string, PublicCocktail[]>();
+    for (const item of items) {
+      const category = item.category?.trim() || "Cocktail";
+      groups.set(category, [...(groups.get(category) ?? []), item]);
+    }
+    return Array.from(groups.entries());
+  }, [items]);
+
+  const renderCard = (item: PublicCocktail) => (
+    <motion.article
+      className="group overflow-hidden rounded-card border border-border bg-card shadow-soft backdrop-blur-sm"
+      initial={{ opacity: 0, y: 24 }}
+      key={item.id}
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      viewport={{ amount: 0.15, once: true }}
+      whileHover={{ y: -5 }}
+      whileInView={{ opacity: 1, y: 0 }}
+    >
+      {item.image_url && (
+        <div
+          aria-label={`Cocktail ${item.name}`}
+          className="h-56 bg-cover bg-center transition-transform duration-700 group-hover:scale-[1.02]"
+          role="img"
+          style={{ backgroundImage: `url("${item.image_url}")` }}
+        />
+      )}
+      <div className="p-6">
+        <div className="flex items-start justify-between gap-5">
+          <div className="min-w-0">
+            <p className="text-[0.62rem] font-semibold tracking-[0.18em] text-gold uppercase">
+              {item.category}
+            </p>
+            <div className="mt-2 flex items-center gap-2">
+              <h3 className="font-display text-3xl text-gold-light">
+                {item.name}
+              </h3>
+              {item.is_featured && (
+                <Star
+                  aria-label="Cocktail in evidenza"
+                  className="shrink-0 text-gold"
+                  fill="currentColor"
+                  size={13}
+                />
+              )}
+            </div>
+          </div>
+          <span className="shrink-0 pt-6 text-sm font-semibold text-gold">
+            {formatPrice(item.price)}
+          </span>
+        </div>
+
+        {item.description && (
+          <p className="mt-4 text-sm leading-7 text-noir-gray">
+            {item.description}
+          </p>
+        )}
+        {item.ingredients && (
+          <p className="mt-3 text-xs leading-6 text-noir-gray">
+            <span className="font-semibold tracking-[0.08em] text-gold uppercase">
+              Ingredienti:
+            </span>{" "}
+            {item.ingredients}
+          </p>
+        )}
+        {item.alcohol_level && (
+          <p className="mt-3 text-xs tracking-[0.08em] text-noir-gray uppercase">
+            {item.alcohol_level}
+          </p>
+        )}
+      </div>
+    </motion.article>
+  );
 
   return (
     <section
-      className="w-full max-w-full overflow-hidden bg-background-primary px-4 py-24 sm:px-6 sm:py-32 lg:px-8"
+      className={cn(
+        "w-full max-w-full overflow-hidden bg-background-primary px-4 py-24 sm:px-6 sm:py-32 lg:px-8",
+        standalone && "pt-36 sm:pt-40",
+      )}
       id="menu"
     >
       <div className="mx-auto max-w-7xl">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
-          viewport={{ amount: 0.5, once: true }}
-          whileInView={{ opacity: 1, y: 0 }}
-        >
-          <SectionTitle
-            description="Creazioni esclusive, ingredienti ricercati e carattere deciso: scopri il menu che racconta l'anima di Noir."
-            label="La nostra selezione"
-            title="Menu Noir"
-          />
-        </motion.div>
+        <SectionTitle
+          description={
+            featuredOnly
+              ? "Le creazioni scelte dai nostri bartender: carattere Noir, ingredienti ricercati e dettagli inattesi."
+              : "Cocktail signature, grandi classici e proposte Noir: scopri la selezione completa."
+          }
+          label={featuredOnly ? "In evidenza" : "La nostra selezione"}
+          title={featuredOnly ? "Cocktail Signature" : "Menu Noir"}
+        />
 
         {status === "loading" ? (
           <div
             aria-label="Caricamento menu"
-            className="mt-14 grid gap-6 md:grid-cols-2"
+            className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-3"
             role="status"
           >
-            {[0, 1, 2, 3].map((item) => (
+            {[0, 1, 2].map((item) => (
               <div
-                className="h-44 animate-pulse rounded-card border border-border bg-card/60"
+                className="h-72 animate-pulse rounded-card border border-border bg-card/60"
                 key={item}
               />
             ))}
@@ -210,105 +297,38 @@ export function Menu() {
               </p>
             )}
 
-            <div className="mt-14 space-y-16">
-              {categories.map((category, categoryIndex) => (
-                <motion.section
-                  aria-labelledby={`menu-category-${category.id}`}
-                  id={category.slug}
-                  initial={{ opacity: 0, y: 24 }}
-                  key={category.id}
-                  transition={{
-                    delay: Math.min(categoryIndex * 0.06, 0.24),
-                    duration: 0.65,
-                    ease: [0.22, 1, 0.36, 1],
-                  }}
-                  viewport={{ amount: 0.12, once: true }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                >
-                  <div className="mb-7 flex flex-col gap-2 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
-                    <div>
-                      <p className="text-[0.65rem] font-semibold tracking-[0.22em] text-gold uppercase">
-                        {String(categoryIndex + 1).padStart(2, "0")}
+            {featuredOnly ? (
+              <div className="mt-14 grid gap-7 md:grid-cols-2 lg:grid-cols-3">
+                {items.map(renderCard)}
+              </div>
+            ) : (
+              <div className="mt-16 space-y-16">
+                {groupedItems.map(([category, categoryItems], index) => (
+                  <section key={category}>
+                    <div className="mb-7 border-b border-border pb-5">
+                      <p className="text-[0.65rem] font-semibold tracking-[0.2em] text-gold uppercase">
+                        {String(index + 1).padStart(2, "0")}
                       </p>
-                      <h3
-                        className="mt-2 font-display text-3xl font-medium text-gold-light sm:text-4xl"
-                        id={`menu-category-${category.id}`}
-                      >
-                        {category.name}
-                      </h3>
+                      <h2 className="mt-2 font-display text-4xl text-gold-light">
+                        {category}
+                      </h2>
                     </div>
-                    {category.description && (
-                      <p className="max-w-xl text-sm leading-6 text-noir-gray sm:text-right">
-                        {category.description}
-                      </p>
-                    )}
-                  </div>
-
-                  {category.items.length === 0 ? (
-                    <p className="rounded-card border border-border bg-card/40 px-6 py-8 text-sm text-noir-gray">
-                      La selezione di questa categoria è in aggiornamento.
-                    </p>
-                  ) : (
-                    <div className="grid gap-x-10 gap-y-5 md:grid-cols-2">
-                      {category.items.map((item) => (
-                        <article
-                          className="group rounded-card border border-border bg-card/70 p-5 shadow-soft backdrop-blur-sm transition-colors hover:border-gold/30 sm:p-6"
-                          key={item.id}
-                        >
-                          <div className="flex items-start justify-between gap-5">
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2">
-                                <h4 className="font-display text-2xl text-gold-light">
-                                  {item.name}
-                                </h4>
-                                {item.isFeatured && (
-                                  <Star
-                                    aria-label="In evidenza"
-                                    className="shrink-0 text-gold"
-                                    fill="currentColor"
-                                    size={13}
-                                  />
-                                )}
-                              </div>
-                              {item.description && (
-                                <p className="mt-2 text-sm leading-6 text-noir-gray">
-                                  {item.description}
-                                </p>
-                              )}
-                            </div>
-                            <span className="shrink-0 pt-1 text-sm font-semibold text-gold">
-                              {formatPrice(item.price)}
-                            </span>
-                          </div>
-
-                          {item.ingredients && (
-                            <p className="mt-3 text-xs leading-5 text-noir-gray">
-                              <span className="font-semibold tracking-[0.08em] text-gold uppercase">
-                                Ingredienti:
-                              </span>{" "}
-                              {item.ingredients}
-                            </p>
-                          )}
-
-                          {item.tags.length > 0 && (
-                            <div className="mt-4 flex flex-wrap gap-2">
-                              {item.tags.map((tag) => (
-                                <span
-                                  className="rounded-full border border-gold/20 px-2.5 py-1 text-[0.6rem] tracking-[0.12em] text-gold-light uppercase"
-                                  key={`${item.id}-${tag}`}
-                                >
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </article>
-                      ))}
+                    <div className="grid gap-7 md:grid-cols-2 lg:grid-cols-3">
+                      {categoryItems.map(renderCard)}
                     </div>
-                  )}
-                </motion.section>
-              ))}
-            </div>
+                  </section>
+                ))}
+              </div>
+            )}
+
+            {featuredOnly && (
+              <div className="mt-12 flex justify-center">
+                <PremiumButton href="/menu" variant="outline">
+                  Scopri il menu completo
+                  <ArrowUpRight aria-hidden="true" size={16} />
+                </PremiumButton>
+              </div>
+            )}
           </>
         )}
       </div>
