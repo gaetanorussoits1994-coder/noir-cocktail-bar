@@ -12,6 +12,11 @@ import {
   getDisplayTags,
   getMenuAllergens,
 } from "@/lib/menu-allergens";
+import {
+  deduplicateMenuItems,
+  getMenuItemSlug,
+  slugifyMenuValue,
+} from "@/lib/menu-items";
 import { getSupabaseClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
@@ -157,16 +162,6 @@ function formatPrice(price: number | null) {
   }).format(price);
 }
 
-function createCocktailSlug(slug: string | null | undefined, name: string) {
-  return (slug?.trim() || name)
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
 function formatTag(tag: string) {
   const normalizedTag = tag.toLowerCase();
   if (normalizedTag.includes("signature")) return `⭐ ${tag}`;
@@ -193,7 +188,7 @@ function formatTag(tag: string) {
 }
 
 function PublicMenuCard({ cocktail }: { cocktail: PublicCocktail }) {
-  const cocktailSlug = createCocktailSlug(cocktail.slug, cocktail.name);
+  const cocktailSlug = getMenuItemSlug(cocktail);
   const premiumDescription = getPremiumDescription(cocktail);
   const displayTags = getDisplayTags(cocktail.tags);
   const allergens = getMenuAllergens(cocktail);
@@ -369,9 +364,9 @@ export function Menu({
                 normalizeCategory(category.name) ===
                 normalizeCategory(categoryName),
             ) || {
-              id: `catalog-${createCocktailSlug(null, categoryName)}`,
+              id: `catalog-${slugifyMenuValue(categoryName)}`,
               name: categoryName,
-              slug: createCocktailSlug(null, categoryName),
+              slug: slugifyMenuValue(categoryName),
               description: categoryIntroductions[categoryName] || null,
               sort_order: index + 1,
             },
@@ -409,7 +404,7 @@ export function Menu({
             },
           ];
         });
-        const visibleItems = categorizedItems;
+        const visibleItems = deduplicateMenuItems(categorizedItems);
 
         setMenuItems(visibleItems);
         setMenuCategories(catalogCategories);
@@ -466,8 +461,9 @@ export function Menu({
     };
   }, [featuredOnly, loadMenu]);
 
-  const displayedItems =
-    menuItems.length > 0 ? menuItems : fallbackItems;
+  const displayedItems = deduplicateMenuItems(
+    menuItems.length > 0 ? menuItems : fallbackItems,
+  );
   const displayedCategories =
     menuCategories.length > 0 ? menuCategories : fallbackCategories;
 
