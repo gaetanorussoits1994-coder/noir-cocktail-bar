@@ -112,7 +112,7 @@ function PublicMenuCard({ cocktail }: { cocktail: PublicCocktail }) {
         className="flex h-full flex-col focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-gold"
         href={`/cocktails/${encodeURIComponent(cocktail.slug)}`}
       >
-        <div className="relative h-[240px] overflow-hidden bg-background-secondary sm:h-[280px] lg:h-[310px]">
+        <div className="relative h-[220px] overflow-hidden bg-background-secondary md:h-[280px]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             alt={`Cocktail ${cocktail.name}`}
@@ -123,6 +123,7 @@ function PublicMenuCard({ cocktail }: { cocktail: PublicCocktail }) {
               }
             }}
             src={cocktail.image_url?.trim() || "/images/noir-negroni.png"}
+            style={{ height: "100%", objectFit: "cover", width: "100%" }}
           />
           <div
             aria-hidden="true"
