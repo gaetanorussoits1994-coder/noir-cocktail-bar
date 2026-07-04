@@ -135,6 +135,7 @@ export function Contact() {
 
         <motion.div
           className="scroll-mt-28"
+          id="booking"
           initial={{ opacity: 0, y: 32 }}
           transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
           viewport={{ amount: 0.2, once: true }}

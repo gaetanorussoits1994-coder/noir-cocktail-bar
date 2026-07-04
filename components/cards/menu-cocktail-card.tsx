@@ -4,6 +4,10 @@ import { motion } from "framer-motion";
 import { Star } from "lucide-react";
 import Link from "next/link";
 
+import {
+  getDisplayTags,
+  getMenuAllergens,
+} from "@/lib/menu-allergens";
 import { cn } from "@/lib/utils";
 
 export type PublicCocktail = {
@@ -13,6 +17,7 @@ export type PublicCocktail = {
   category: string;
   description: string | null;
   price: number | null;
+  image_url?: string | null;
   ingredients: string | null;
   alcohol_level: string | null;
   tags: string[];
@@ -95,6 +100,9 @@ type MenuCocktailCardProps = {
 };
 
 export function MenuCocktailCard({ cocktail }: MenuCocktailCardProps) {
+  const displayTags = getDisplayTags(cocktail.tags);
+  const allergens = getMenuAllergens(cocktail);
+
   return (
     <motion.article
       className="group relative h-full overflow-hidden rounded-card border border-border bg-card shadow-soft backdrop-blur-sm transition-[border-color,box-shadow] duration-500 hover:border-gold/45 hover:shadow-[0_28px_80px_rgba(200,169,106,0.16)]"
@@ -151,7 +159,26 @@ export function MenuCocktailCard({ cocktail }: MenuCocktailCardProps) {
             </p>
           )}
 
-          <CocktailBadges className="mt-5" tags={cocktail.tags} />
+          <CocktailBadges className="mt-5" tags={displayTags} />
+
+          {allergens.length > 0 && (
+            <div className="mt-5 border-t border-border pt-4">
+              <p className="text-[0.6rem] font-semibold tracking-[0.14em] text-gold uppercase">
+                Allergeni
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {allergens.map((allergen) => (
+                  <span
+                    className="rounded-full border border-gold/20 bg-gold/[0.06] px-3 py-1.5 text-[0.62rem] font-semibold text-gold-light"
+                    key={allergen.label}
+                  >
+                    <span aria-hidden="true">{allergen.icon}</span>{" "}
+                    {allergen.label}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           <span className="mt-auto pt-6 text-xs font-semibold tracking-[0.12em] text-gold uppercase">
             Scopri il cocktail →

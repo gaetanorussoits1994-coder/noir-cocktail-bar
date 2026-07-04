@@ -8,6 +8,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { PremiumButton } from "@/components/ui/premium-button";
 import { SectionTitle } from "@/components/ui/section-title";
 import { fallbackMenu } from "@/lib/data/static-content";
+import {
+  getDisplayTags,
+  getMenuAllergens,
+} from "@/lib/menu-allergens";
 import { getSupabaseClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
@@ -83,6 +87,14 @@ const categoryIntroductions: Record<string, string> = {
   "Food & Cicchetti":
     "Piccoli piatti e abbinamenti pensati per accompagnare il ritmo della notte.",
 };
+
+const catalogCategoryNames = [
+  "Cocktail Signature",
+  "Cocktail Classici",
+  "Negroni Collection",
+  "Champagne & Bollicine",
+  "Food & Cicchetti",
+];
 
 function normalizeCategory(value: string | null | undefined) {
   return (value || "").trim().toLocaleLowerCase("it-IT");
@@ -183,6 +195,14 @@ function formatTag(tag: string) {
 function PublicMenuCard({ cocktail }: { cocktail: PublicCocktail }) {
   const cocktailSlug = createCocktailSlug(cocktail.slug, cocktail.name);
   const premiumDescription = getPremiumDescription(cocktail);
+  const displayTags = getDisplayTags(cocktail.tags);
+  const allergens = getMenuAllergens(cocktail);
+  const displayedAllergens =
+    allergens.length > 0
+      ? allergens
+      : normalizeCategory(cocktail.category).includes("food")
+        ? [{ icon: "ℹ️", label: "Chiedi allo staff" }]
+        : [];
 
   return (
     <motion.article
@@ -238,9 +258,9 @@ function PublicMenuCard({ cocktail }: { cocktail: PublicCocktail }) {
             </p>
           )}
 
-          {(cocktail.tags ?? []).length > 0 && (
+          {displayTags.length > 0 && (
             <div className="mt-5 flex flex-wrap gap-2">
-              {(cocktail.tags ?? []).map((tag) => (
+              {displayTags.map((tag) => (
                 <span
                   className="rounded-full border border-gold/20 bg-gold/[0.06] px-3 py-1.5 text-[0.62rem] font-semibold tracking-[0.08em] text-gold-light uppercase"
                   key={`${cocktail.id}-${tag}`}
@@ -248,6 +268,25 @@ function PublicMenuCard({ cocktail }: { cocktail: PublicCocktail }) {
                   {formatTag(tag)}
                 </span>
               ))}
+            </div>
+          )}
+
+          {displayedAllergens.length > 0 && (
+            <div className="mt-5 border-t border-border pt-4">
+              <p className="text-[0.6rem] font-semibold tracking-[0.14em] text-gold uppercase">
+                Allergeni
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {displayedAllergens.map((allergen) => (
+                  <span
+                    className="rounded-full border border-gold/20 bg-gold/[0.06] px-3 py-1.5 text-[0.62rem] font-semibold text-gold-light"
+                    key={allergen.label}
+                  >
+                    <span aria-hidden="true">{allergen.icon}</span>{" "}
+                    {allergen.label}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -265,13 +304,7 @@ export function Menu({
   featuredOnly = true,
   standalone = false,
 }: MenuProps) {
-  const fallbackItems = useMemo(
-    () =>
-      featuredOnly
-        ? fallbackCocktails.filter((item) => item.is_featured)
-        : fallbackCocktails,
-    [featuredOnly],
-  );
+  const fallbackItems = fallbackCocktails;
   const [menuItems, setMenuItems] = useState<PublicCocktail[]>([]);
   const [menuCategories, setMenuCategories] = useState<
     PublicMenuCategory[]
@@ -329,11 +362,25 @@ export function Menu({
         const activeCategories = (
           (categoriesResult.data ?? []) as PublicMenuCategory[]
         ).sort((first, second) => first.sort_order - second.sort_order);
+        const catalogCategories = catalogCategoryNames.map(
+          (categoryName, index) =>
+            activeCategories.find(
+              (category) =>
+                normalizeCategory(category.name) ===
+                normalizeCategory(categoryName),
+            ) || {
+              id: `catalog-${createCocktailSlug(null, categoryName)}`,
+              name: categoryName,
+              slug: createCocktailSlug(null, categoryName),
+              description: categoryIntroductions[categoryName] || null,
+              sort_order: index + 1,
+            },
+        );
         const categoriesById = new Map(
           activeCategories.map((category) => [category.id, category]),
         );
         const categoriesByName = new Map(
-          activeCategories.map((category) => [
+          [...activeCategories, ...catalogCategories].map((category) => [
             normalizeCategory(category.name),
             category,
           ]),
@@ -362,12 +409,10 @@ export function Menu({
             },
           ];
         });
-        const visibleItems = featuredOnly
-          ? categorizedItems.filter((item) => item.is_featured)
-          : categorizedItems;
+        const visibleItems = categorizedItems;
 
         setMenuItems(visibleItems);
-        setMenuCategories(activeCategories);
+        setMenuCategories(catalogCategories);
         setIsLoading(false);
 
         if (visibleItems.length === 0) {
@@ -429,6 +474,13 @@ export function Menu({
   const groupedSections = useMemo(
     () =>
       displayedCategories
+        .filter((category) =>
+          catalogCategoryNames.some(
+            (name) =>
+              normalizeCategory(name) ===
+              normalizeCategory(category.name),
+          ),
+        )
         .map((category) => ({
           category,
           items: displayedItems.filter(
@@ -485,15 +537,13 @@ export function Menu({
               </p>
             )}
 
-            {featuredOnly ? (
-              <div className="mt-14 grid gap-7 md:grid-cols-2 lg:grid-cols-3">
-                {displayedItems.map((item) => (
-                  <PublicMenuCard cocktail={item} key={item.id} />
-                ))}
-              </div>
-            ) : (
-              <div className="mt-16 space-y-16">
-                {groupedSections.map(({ category, items }, index) => (
+            <div className="mt-16 space-y-16">
+              {groupedSections.map(({ category, items }, index) => {
+                const sectionItems = featuredOnly
+                  ? items.slice(0, 4)
+                  : items;
+
+                return (
                   <section id={category.slug} key={category.id}>
                     <div className="mb-8 border-b border-border pb-6">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -511,23 +561,22 @@ export function Menu({
                       </div>
                     </div>
                     <div className="grid gap-7 md:grid-cols-2 lg:grid-cols-3">
-                      {items.map((item) => (
+                      {sectionItems.map((item) => (
                         <PublicMenuCard cocktail={item} key={item.id} />
                       ))}
                     </div>
+                    {featuredOnly && (
+                      <div className="mt-8 flex justify-center">
+                        <PremiumButton href="/menu" variant="outline">
+                          Scopri tutto il menu
+                          <ArrowUpRight aria-hidden="true" size={16} />
+                        </PremiumButton>
+                      </div>
+                    )}
                   </section>
-                ))}
-              </div>
-            )}
-
-            {featuredOnly && (
-              <div className="mt-12 flex justify-center">
-                <PremiumButton href="/menu" variant="outline">
-                  Scopri il menu completo
-                  <ArrowUpRight aria-hidden="true" size={16} />
-                </PremiumButton>
-              </div>
-            )}
+                );
+              })}
+            </div>
           </>
         )}
       </div>

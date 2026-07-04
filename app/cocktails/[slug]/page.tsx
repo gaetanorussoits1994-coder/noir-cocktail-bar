@@ -9,11 +9,16 @@ import { useEffect, useState } from "react";
 import {
   CocktailBadges,
   formatCocktailPrice,
+  MenuCocktailCard,
   type PublicCocktail,
 } from "@/components/cards/menu-cocktail-card";
 import { Footer } from "@/components/layout/footer";
 import { useReservationModal } from "@/components/providers/reservation-modal-provider";
 import { PremiumButton } from "@/components/ui/premium-button";
+import {
+  getDisplayTags,
+  getMenuAllergens,
+} from "@/lib/menu-allergens";
 import { getSupabaseClient } from "@/lib/supabase";
 
 type DetailStatus = "loading" | "ready" | "not-found";
@@ -47,10 +52,36 @@ function createCocktailSlug(slug: string | null | undefined, name = "") {
     .replace(/^-+|-+$/g, "");
 }
 
+function getLongDescription(cocktail: PublicCocktail) {
+  const description = cocktail.description?.trim() || "";
+  const sentences = description
+    .split(/[.!?]+/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+
+  if (sentences.length >= 2) return description;
+
+  const opening = description
+    ? `${description.replace(/[.!?]+$/, "")}.`
+    : `${cocktail.name} è una creazione Noir dal profilo elegante e contemporaneo.`;
+  const ingredients = cocktail.ingredients
+    ? `La composizione unisce ${cocktail.ingredients} in un equilibrio preciso e persistente.`
+    : "La sua struttura nasce da una ricerca attenta di equilibrio, profondità e persistenza.";
+
+  return `${opening} ${ingredients}`;
+}
+
+function getCocktailStory(cocktail: PublicCocktail) {
+  return `${cocktail.name} nasce dal dialogo tra la cultura della miscelazione internazionale e l'estetica contemporanea di Noir. La ricetta valorizza l'identità della categoria ${cocktail.category}, trasformandola in un'esperienza pensata per il ritmo della notte.`;
+}
+
 export default function CocktailDetailPage() {
   const params = useParams<{ slug: string }>();
   const { openReservation } = useReservationModal();
   const [cocktail, setCocktail] = useState<PublicCocktail | null>(null);
+  const [relatedCocktails, setRelatedCocktails] = useState<
+    PublicCocktail[]
+  >([]);
   const [status, setStatus] = useState<DetailStatus>("loading");
 
   useEffect(() => {
@@ -66,8 +97,7 @@ export default function CocktailDetailPage() {
 
     async function loadCocktail() {
       const requestedSlug = createCocktailSlug(params.slug);
-      const selectFields =
-        "id, name, slug, category, description, price, ingredients, alcohol_level, tags, is_featured, is_available, display_order";
+      const selectFields = "*";
 
       const { data, error } = await client
         .from("menu_items")
@@ -117,6 +147,24 @@ export default function CocktailDetailPage() {
       }
 
       setCocktail(selectedCocktail);
+
+      const { data: relatedData, error: relatedError } = await client
+        .from("menu_items")
+        .select(selectFields)
+        .eq("is_available", true)
+        .eq("category", selectedCocktail.category)
+        .neq("id", selectedCocktail.id)
+        .order("display_order", { ascending: true })
+        .limit(3);
+
+      if (relatedError) {
+        logCocktailError(relatedError);
+        setRelatedCocktails([]);
+      } else {
+        setRelatedCocktails(
+          (relatedData ?? []) as PublicCocktail[],
+        );
+      }
       setStatus("ready");
     }
 
@@ -168,11 +216,34 @@ export default function CocktailDetailPage() {
     );
   }
 
+  const allergens = getMenuAllergens(cocktail);
+  const displayedAllergens =
+    allergens.length > 0
+      ? allergens
+      : cocktail.category.toLocaleLowerCase("it-IT").includes("food")
+        ? [{ icon: "ℹ️", label: "Chiedi allo staff" }]
+        : [];
+  const displayTags = getDisplayTags(cocktail.tags);
+  const longDescription = getLongDescription(cocktail);
+  const cocktailStory = getCocktailStory(cocktail);
+
   return (
     <>
       <main className="min-h-screen bg-background-primary pt-20">
         <section className="relative min-h-[62vh] overflow-hidden border-b border-border">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_25%,rgba(200,169,106,0.16),transparent_38%),linear-gradient(145deg,#15110b,#090909_68%)]" />
+          {cocktail.image_url ? (
+            <div
+              aria-label={`Cocktail ${cocktail.name}`}
+              className="absolute inset-0 bg-cover bg-center"
+              role="img"
+              style={{
+                backgroundImage: `url("${cocktail.image_url}")`,
+              }}
+            />
+          ) : (
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_25%,rgba(200,169,106,0.16),transparent_38%),linear-gradient(145deg,#15110b,#090909_68%)]" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-background-primary via-background-primary/45 to-black/25" />
           <div className="absolute inset-x-8 top-16 h-px bg-gradient-to-r from-transparent via-gold/25 to-transparent" />
 
           <motion.div
@@ -216,12 +287,36 @@ export default function CocktailDetailPage() {
               <h2 className="mt-3 font-display text-4xl text-gold-light">
                 Dentro il bicchiere
               </h2>
-              {cocktail.description && (
-                <p className="mt-6 max-w-2xl text-base leading-8 text-noir-gray">
-                  {cocktail.description}
+              <p className="mt-6 max-w-2xl text-base leading-8 text-noir-gray">
+                {longDescription}
+              </p>
+              <div className="mt-10 border-t border-border pt-8">
+                <p className="text-[0.65rem] font-semibold tracking-[0.2em] text-gold uppercase">
+                  La storia
                 </p>
+                <p className="mt-4 max-w-2xl text-sm leading-8 text-noir-gray sm:text-base">
+                  {cocktailStory}
+                </p>
+              </div>
+              <CocktailBadges className="mt-7" tags={displayTags} />
+              {displayedAllergens.length > 0 && (
+                <div className="mt-8">
+                  <p className="text-[0.65rem] font-semibold tracking-[0.16em] text-gold uppercase">
+                    Allergeni
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {displayedAllergens.map((allergen) => (
+                      <span
+                        className="rounded-full border border-gold/20 bg-gold/[0.06] px-3 py-1.5 text-xs font-semibold text-gold-light"
+                        key={allergen.label}
+                      >
+                        <span aria-hidden="true">{allergen.icon}</span>{" "}
+                        {allergen.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               )}
-              <CocktailBadges className="mt-7" tags={cocktail.tags} />
             </motion.div>
 
             <motion.aside
@@ -267,6 +362,27 @@ export default function CocktailDetailPage() {
             </motion.aside>
           </div>
         </section>
+
+        {relatedCocktails.length > 0 && (
+          <section className="border-t border-border px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
+            <div className="mx-auto max-w-7xl">
+              <p className="text-[0.65rem] font-semibold tracking-[0.2em] text-gold uppercase">
+                Continua l&apos;esperienza
+              </p>
+              <h2 className="mt-3 font-display text-4xl text-gold-light sm:text-5xl">
+                Cocktail correlati
+              </h2>
+              <div className="mt-10 grid gap-7 md:grid-cols-2 lg:grid-cols-3">
+                {relatedCocktails.map((relatedCocktail) => (
+                  <MenuCocktailCard
+                    cocktail={relatedCocktail}
+                    key={relatedCocktail.id}
+                  />
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
       </main>
       <Footer />
     </>

@@ -65,7 +65,7 @@ export function Experience() {
 
           <PremiumButton
             className="mt-9"
-            href="#contatti"
+            href="/about"
             variant="outline"
           >
             Scopri la nostra storia

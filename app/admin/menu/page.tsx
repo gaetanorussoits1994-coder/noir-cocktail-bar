@@ -36,6 +36,7 @@ type MenuFormState = {
   description: string;
   price: string;
   ingredients: string;
+  tags: string;
   alcoholLevel: string;
   isFeatured: boolean;
   isAvailable: boolean;
@@ -49,6 +50,7 @@ const emptyForm: MenuFormState = {
   description: "",
   price: "",
   ingredients: "",
+  tags: "",
   alcoholLevel: "",
   isFeatured: false,
   isAvailable: true,
@@ -187,6 +189,7 @@ export default function AdminMenuPage() {
       description: item.description || "",
       price: item.price?.toString() || "",
       ingredients: item.ingredients || "",
+      tags: item.tags.join(", "),
       alcoholLevel: item.alcohol_level || "",
       isFeatured: item.is_featured,
       isAvailable: item.is_available,
@@ -223,6 +226,10 @@ export default function AdminMenuPage() {
       description: form.description.trim() || null,
       price: form.price ? Number(form.price) : null,
       ingredients: form.ingredients.trim() || null,
+      tags: form.tags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean),
       alcohol_level: form.alcoholLevel.trim() || null,
       is_featured: form.isFeatured,
       is_available: form.isAvailable,
@@ -422,6 +429,20 @@ export default function AdminMenuPage() {
                 }
                 value={form.ingredients}
               />
+            </label>
+
+            <label className="md:col-span-2">
+              <span className={labelClass}>Tag e allergeni</span>
+              <input
+                className={inputClass}
+                onChange={(event) => updateField("tags", event.target.value)}
+                placeholder="Signature, Solfiti, Latte, Mandorla"
+                value={form.tags}
+              />
+              <span className="mt-2 block text-xs leading-5 text-noir-gray">
+                Separa i valori con una virgola. Gli allergeni riconosciuti
+                vengono mostrati automaticamente nelle card.
+              </span>
             </label>
 
             <label>

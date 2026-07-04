@@ -13,8 +13,9 @@ const navigation = [
   { label: "Home", href: "/#home" },
   { label: "Menu", href: "/menu" },
   { label: "Experience", href: "/#experience" },
-  { label: "Gallery", href: "/#gallery" },
   { label: "Eventi", href: "/#events" },
+  { label: "Gallery", href: "/#gallery" },
+  { label: "La nostra storia", href: "/about" },
   { label: "Contatti", href: "/#contact" },
 ];
 
@@ -86,7 +87,7 @@ export function Navbar() {
 
           <PremiumButton
             className="hidden rounded-card border border-gold bg-gold px-5 py-2.5 text-xs font-semibold tracking-[0.08em] text-background-primary uppercase shadow-gold transition-colors duration-300 hover:bg-gold-light lg:inline-flex"
-            href="#reservation-form"
+            href="/#booking"
             onClick={(event) => {
               event.preventDefault();
               openReservation();
@@ -162,7 +163,7 @@ export function Navbar() {
 
               <PremiumButton
                 className="mt-auto rounded-card border border-gold bg-gold px-6 py-4 text-center text-sm font-semibold tracking-[0.08em] text-background-primary uppercase shadow-gold"
-                href="#reservation-form"
+                href="/#booking"
                 onClick={(event) => {
                   event.preventDefault();
                   closeMenu();
