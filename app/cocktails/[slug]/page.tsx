@@ -67,7 +67,7 @@ export default function CocktailDetailPage() {
     async function loadCocktail() {
       const requestedSlug = createCocktailSlug(params.slug);
       const selectFields =
-        "id, name, slug, category, description, price, image_url, ingredients, alcohol_level, tags, is_featured, is_available, display_order";
+        "id, name, slug, category, description, price, ingredients, alcohol_level, tags, is_featured, is_available, display_order";
 
       const { data, error } = await client
         .from("menu_items")
@@ -172,26 +172,8 @@ export default function CocktailDetailPage() {
     <>
       <main className="min-h-screen bg-background-primary pt-20">
         <section className="relative min-h-[62vh] overflow-hidden border-b border-border">
-          {cocktail.image_url ? (
-            <motion.div
-              animate={{ scale: 1 }}
-              aria-label={`Cocktail ${cocktail.name}`}
-              className="absolute inset-0 bg-cover bg-center"
-              initial={{ scale: 1.04 }}
-              role="img"
-              style={{
-                backgroundImage: `url("${cocktail.image_url}")`,
-              }}
-              transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-            />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center bg-[radial-gradient(circle_at_50%_35%,rgba(200,169,106,0.22),transparent_42%),linear-gradient(145deg,#18130c,#090909_65%)]">
-              <span className="flex size-28 items-center justify-center rounded-full border border-gold/25 bg-gold/[0.06] text-gold">
-                <Martini aria-hidden="true" size={44} strokeWidth={1.1} />
-              </span>
-            </div>
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-background-primary via-background-primary/45 to-black/25" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_25%,rgba(200,169,106,0.16),transparent_38%),linear-gradient(145deg,#15110b,#090909_68%)]" />
+          <div className="absolute inset-x-8 top-16 h-px bg-gradient-to-r from-transparent via-gold/25 to-transparent" />
 
           <motion.div
             animate={{ opacity: 1, y: 0 }}

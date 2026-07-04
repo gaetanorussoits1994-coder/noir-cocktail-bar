@@ -18,7 +18,6 @@ type PublicCocktail = {
   category: string | null;
   description: string | null;
   price: number | null;
-  image_url: string | null;
   ingredients: string | null;
   alcohol_level: string | null;
   tags: string[] | null;
@@ -35,7 +34,6 @@ const fallbackCocktails: PublicCocktail[] = fallbackMenu.flatMap((category) =>
     category: category.name,
     description: item.description || null,
     price: item.price,
-    image_url: item.imageUrl,
     ingredients: item.ingredients || null,
     alcohol_level: null,
     tags: item.tags,
@@ -111,7 +109,7 @@ function PublicMenuCard({ cocktail }: { cocktail: PublicCocktail }) {
 
   return (
     <motion.article
-      className="group h-full overflow-hidden rounded-card border border-border bg-card shadow-soft backdrop-blur-sm transition-[border-color,box-shadow] duration-500 hover:border-gold/45 hover:shadow-[0_28px_80px_rgba(200,169,106,0.16)]"
+      className="group relative h-full overflow-hidden rounded-card border border-border bg-[radial-gradient(circle_at_100%_0%,rgba(200,169,106,0.09),transparent_42%),rgba(255,255,255,0.025)] shadow-soft backdrop-blur-sm transition-[border-color,box-shadow] duration-500 hover:border-gold/45 hover:shadow-[0_28px_80px_rgba(200,169,106,0.14)]"
       initial={{ opacity: 0, y: 28 }}
       transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
       viewport={{ amount: 0.12, once: true }}
@@ -123,26 +121,11 @@ function PublicMenuCard({ cocktail }: { cocktail: PublicCocktail }) {
         className="flex h-full flex-col focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-gold"
         href={`/cocktails/${encodeURIComponent(cocktailSlug)}`}
       >
-        <div className="relative h-[220px] overflow-hidden bg-background-secondary md:h-[280px]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            alt={`Cocktail ${cocktail.name}`}
-            className="block h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
-            onError={(event) => {
-              if (!event.currentTarget.src.endsWith("/images/noir-negroni.png")) {
-                event.currentTarget.src = "/images/noir-negroni.png";
-              }
-            }}
-            src={cocktail.image_url || "/images/noir-negroni.png"}
-            style={{ height: "100%", objectFit: "cover", width: "100%" }}
-          />
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 bg-gradient-to-t from-background-primary/70 via-transparent to-black/10"
-          />
-        </div>
-
-        <div className="flex flex-1 flex-col p-6 sm:p-7">
+        <div
+          aria-hidden="true"
+          className="h-px w-full bg-gradient-to-r from-transparent via-gold/50 to-transparent"
+        />
+        <div className="flex flex-1 flex-col p-6 sm:p-8">
           <p className="text-[0.62rem] font-semibold tracking-[0.18em] text-gold uppercase">
             {cocktail.category || "Cocktail"}
           </p>

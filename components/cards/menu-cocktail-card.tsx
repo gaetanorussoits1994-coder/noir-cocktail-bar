@@ -13,7 +13,6 @@ export type PublicCocktail = {
   category: string;
   description: string | null;
   price: number | null;
-  image_url: string | null;
   ingredients: string | null;
   alcohol_level: string | null;
   tags: string[];
@@ -110,28 +109,14 @@ export function MenuCocktailCard({ cocktail }: MenuCocktailCardProps) {
         className="flex h-full flex-col focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-gold"
         href={`/cocktails/${encodeURIComponent(cocktail.slug)}`}
       >
-        <div className="relative h-[280px] overflow-hidden bg-background-secondary sm:h-[300px] lg:h-[320px]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            alt={`Cocktail ${cocktail.name}`}
-            className="block h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
-            onError={(event) => {
-              if (!event.currentTarget.src.endsWith("/images/noir-negroni.png")) {
-                event.currentTarget.src = "/images/noir-negroni.png";
-              }
-            }}
-            src={cocktail.image_url?.trim() || "/images/noir-negroni.png"}
-          />
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 bg-gradient-to-t from-background-primary/75 via-transparent to-black/10"
-          />
-          <span className="absolute top-5 left-5 rounded-full border border-gold/25 bg-background-primary/75 px-3 py-1.5 text-[0.6rem] font-semibold tracking-[0.16em] text-gold-light uppercase backdrop-blur-md">
+        <div
+          aria-hidden="true"
+          className="h-px w-full bg-gradient-to-r from-transparent via-gold/50 to-transparent"
+        />
+        <div className="flex flex-1 flex-col p-6 sm:p-8">
+          <p className="text-[0.62rem] font-semibold tracking-[0.18em] text-gold uppercase">
             {cocktail.category}
-          </span>
-        </div>
-
-        <div className="flex flex-1 flex-col p-6 sm:p-7">
+          </p>
           <div className="flex min-w-0 items-start justify-between gap-5">
             <div className="flex min-w-0 items-center gap-2">
               <h3 className="break-words font-display text-3xl font-medium text-gold-light transition-colors group-hover:text-gold">

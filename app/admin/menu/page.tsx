@@ -35,7 +35,6 @@ type MenuFormState = {
   category: string;
   description: string;
   price: string;
-  imageUrl: string;
   ingredients: string;
   alcoholLevel: string;
   isFeatured: boolean;
@@ -49,7 +48,6 @@ const emptyForm: MenuFormState = {
   category: "Cocktail Signature",
   description: "",
   price: "",
-  imageUrl: "",
   ingredients: "",
   alcoholLevel: "",
   isFeatured: false,
@@ -188,7 +186,6 @@ export default function AdminMenuPage() {
       category: item.category,
       description: item.description || "",
       price: item.price?.toString() || "",
-      imageUrl: item.image_url || "",
       ingredients: item.ingredients || "",
       alcoholLevel: item.alcohol_level || "",
       isFeatured: item.is_featured,
@@ -225,7 +222,6 @@ export default function AdminMenuPage() {
       category: form.category.trim(),
       description: form.description.trim() || null,
       price: form.price ? Number(form.price) : null,
-      image_url: form.imageUrl.trim() || null,
       ingredients: form.ingredients.trim() || null,
       alcohol_level: form.alcoholLevel.trim() || null,
       is_featured: form.isFeatured,
@@ -453,19 +449,6 @@ export default function AdminMenuPage() {
               />
             </label>
 
-            <label className="md:col-span-2">
-              <span className={labelClass}>URL immagine</span>
-              <input
-                className={inputClass}
-                onChange={(event) =>
-                  updateField("imageUrl", event.target.value)
-                }
-                placeholder="/images/cocktail.png oppure https://..."
-                type="text"
-                value={form.imageUrl}
-              />
-            </label>
-
             <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/20 p-4 text-sm">
               <input
                 checked={form.isAvailable}
@@ -542,16 +525,6 @@ export default function AdminMenuPage() {
                   className={cn(panelClass, "overflow-hidden")}
                   key={item.id}
                 >
-                  {item.image_url && (
-                    <div
-                      aria-label={`Immagine ${item.name}`}
-                      className="h-40 bg-cover bg-center"
-                      role="img"
-                      style={{
-                        backgroundImage: `url("${item.image_url}")`,
-                      }}
-                    />
-                  )}
                   <div className="p-5">
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0">
