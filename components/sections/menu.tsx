@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 
 type PublicCocktail = {
   id: string;
+  category_id: string | null;
   name: string;
   slug: string | null;
   category: string | null;
@@ -26,9 +27,18 @@ type PublicCocktail = {
   display_order: number | null;
 };
 
+type PublicMenuCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  sort_order: number;
+};
+
 const fallbackCocktails: PublicCocktail[] = fallbackMenu.flatMap((category) =>
   category.items.map((item) => ({
     id: item.id,
+    category_id: category.id,
     name: item.name,
     slug: item.id.replace(/^fallback-/, ""),
     category: category.name,
@@ -42,6 +52,72 @@ const fallbackCocktails: PublicCocktail[] = fallbackMenu.flatMap((category) =>
     display_order: item.sortOrder,
   })),
 );
+
+const fallbackCategories: PublicMenuCategory[] = fallbackMenu.map(
+  (category) => ({
+    id: category.id,
+    name: category.name,
+    slug: category.slug,
+    description: category.description,
+    sort_order: category.sortOrder,
+  }),
+);
+
+const categoryIntroductions: Record<string, string> = {
+  "Negroni Collection":
+    "Il grande classico italiano attraversa sfumature affumicate, agrumate e contemporanee.",
+  "Cocktail Signature":
+    "Creazioni originali firmate Noir, costruite con ingredienti ricercati e carattere deciso.",
+  "Cocktail Classici":
+    "I grandi codici della miscelazione, eseguiti con precisione e sensibilità moderna.",
+  "Aperitivi Noir":
+    "Proposte luminose e avvolgenti, pensate per dare il tono alla serata.",
+  "Cicchetti / Shottini":
+    "Piccoli assaggi dal carattere netto, da condividere o scoprire in un solo sorso.",
+  "Alcolici Premium":
+    "Distillati ed etichette selezionate per una degustazione essenziale e raffinata.",
+  "Champagne & Bollicine":
+    "Bollicine eleganti, maison iconiche e bottiglie scelte per celebrare ogni momento.",
+  Analcolici:
+    "Esperienze alcohol free curate con la stessa profondità delle nostre miscelazioni.",
+  "Food & Cicchetti":
+    "Piccoli piatti e abbinamenti pensati per accompagnare il ritmo della notte.",
+};
+
+function normalizeCategory(value: string | null | undefined) {
+  return (value || "").trim().toLocaleLowerCase("it-IT");
+}
+
+function getPremiumDescription(cocktail: PublicCocktail) {
+  const description = cocktail.description?.trim() || "";
+  const sentences = description
+    .split(/[.!?]+/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+
+  if (sentences.length >= 2) return description;
+
+  const opening = description
+    ? `${description.replace(/[.!?]+$/, "")}.`
+    : `${cocktail.name} interpreta l'anima ${
+        cocktail.category
+          ? `della selezione ${cocktail.category}`
+          : "di Noir"
+      } con equilibrio e personalità.`;
+  const finish = cocktail.ingredients?.trim()
+    ? `Le note di ${cocktail.ingredients} costruiscono un sorso elegante, profondo e persistente.`
+    : "Una composizione elegante e precisa, pensata per lasciare un ricordo persistente.";
+
+  return `${opening} ${finish}`;
+}
+
+function getCategoryIntroduction(category: PublicMenuCategory) {
+  return (
+    category.description?.trim() ||
+    categoryIntroductions[category.name] ||
+    `Una selezione Noir dedicata a ${category.name}, curata con equilibrio e personalità.`
+  );
+}
 
 function logMenuError(error: {
   message: string;
@@ -106,6 +182,7 @@ function formatTag(tag: string) {
 
 function PublicMenuCard({ cocktail }: { cocktail: PublicCocktail }) {
   const cocktailSlug = createCocktailSlug(cocktail.slug, cocktail.name);
+  const premiumDescription = getPremiumDescription(cocktail);
 
   return (
     <motion.article
@@ -148,11 +225,9 @@ function PublicMenuCard({ cocktail }: { cocktail: PublicCocktail }) {
             </span>
           </div>
 
-          {cocktail.description && (
-            <p className="mt-4 text-sm leading-7 text-noir-gray">
-              {cocktail.description}
-            </p>
-          )}
+          <p className="mt-4 text-sm leading-7 text-noir-gray">
+            {premiumDescription}
+          </p>
 
           {cocktail.ingredients && (
             <p className="mt-3 text-xs leading-6 text-noir-gray">
@@ -198,6 +273,9 @@ export function Menu({
     [featuredOnly],
   );
   const [menuItems, setMenuItems] = useState<PublicCocktail[]>([]);
+  const [menuCategories, setMenuCategories] = useState<
+    PublicMenuCategory[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
@@ -208,6 +286,7 @@ export function Menu({
       if (!supabase) {
         if (isCurrent()) {
           setMenuItems([]);
+          setMenuCategories([]);
           setIsLoading(false);
           setLoadError(
             "Menu online non disponibile: mostriamo la selezione Noir.",
@@ -219,16 +298,25 @@ export function Menu({
       try {
         console.log("[PublicMenu] Loading menu_items from Supabase");
 
-        const { data, error } = await supabase
-          .from("menu_items")
-          .select("*")
-          .eq("is_available", true);
+        const [itemsResult, categoriesResult] = await Promise.all([
+          supabase
+            .from("menu_items")
+            .select("*")
+            .eq("is_available", true),
+          supabase
+            .from("menu_categories")
+            .select("id, name, slug, description, sort_order")
+            .eq("is_active", true)
+            .order("sort_order", { ascending: true }),
+        ]);
 
         if (!isCurrent()) return;
 
+        const error = itemsResult.error || categoriesResult.error;
         if (error) {
           logMenuError(error);
           setMenuItems([]);
+          setMenuCategories([]);
           setIsLoading(false);
           setLoadError(
             "Il menu live è momentaneamente non disponibile. Ti mostriamo la selezione Noir.",
@@ -236,17 +324,50 @@ export function Menu({
           return;
         }
 
-        console.log("[PublicMenu] Loaded menu_items:", data);
+        console.log("[PublicMenu] Loaded menu_items:", itemsResult.data);
 
-        const sortedItems = ([...(data ?? [])] as PublicCocktail[]).sort(
+        const activeCategories = (
+          (categoriesResult.data ?? []) as PublicMenuCategory[]
+        ).sort((first, second) => first.sort_order - second.sort_order);
+        const categoriesById = new Map(
+          activeCategories.map((category) => [category.id, category]),
+        );
+        const categoriesByName = new Map(
+          activeCategories.map((category) => [
+            normalizeCategory(category.name),
+            category,
+          ]),
+        );
+
+        const sortedItems = (
+          [...(itemsResult.data ?? [])] as PublicCocktail[]
+        ).sort(
           (first, second) =>
             (first.display_order ?? 0) - (second.display_order ?? 0),
         );
+        const categorizedItems = sortedItems.flatMap((item) => {
+          const category =
+            (item.category_id
+              ? categoriesById.get(item.category_id)
+              : undefined) ||
+            categoriesByName.get(normalizeCategory(item.category));
+
+          if (!category) return [];
+
+          return [
+            {
+              ...item,
+              category_id: category.id,
+              category: category.name,
+            },
+          ];
+        });
         const visibleItems = featuredOnly
-          ? sortedItems.filter((item) => item.is_featured)
-          : sortedItems;
+          ? categorizedItems.filter((item) => item.is_featured)
+          : categorizedItems;
 
         setMenuItems(visibleItems);
+        setMenuCategories(activeCategories);
         setIsLoading(false);
 
         if (visibleItems.length === 0) {
@@ -263,6 +384,7 @@ export function Menu({
         console.error("[PublicMenu] Unexpected error", unexpectedError);
         if (!isCurrent()) return;
         setMenuItems([]);
+        setMenuCategories([]);
         setIsLoading(false);
         setLoadError(
           "Il menu live è momentaneamente non disponibile. Ti mostriamo la selezione Noir.",
@@ -286,6 +408,11 @@ export function Menu({
         { event: "*", schema: "public", table: "menu_items" },
         () => void loadMenu(isCurrent),
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "menu_categories" },
+        () => void loadMenu(isCurrent),
+      )
       .subscribe();
 
     return () => {
@@ -296,15 +423,24 @@ export function Menu({
 
   const displayedItems =
     menuItems.length > 0 ? menuItems : fallbackItems;
+  const displayedCategories =
+    menuCategories.length > 0 ? menuCategories : fallbackCategories;
 
-  const groupedItems = useMemo(() => {
-    const groups = new Map<string, PublicCocktail[]>();
-    for (const item of displayedItems) {
-      const category = item.category?.trim() || "Cocktail";
-      groups.set(category, [...(groups.get(category) ?? []), item]);
-    }
-    return Array.from(groups.entries());
-  }, [displayedItems]);
+  const groupedSections = useMemo(
+    () =>
+      displayedCategories
+        .map((category) => ({
+          category,
+          items: displayedItems.filter(
+            (item) =>
+              item.category_id === category.id ||
+              normalizeCategory(item.category) ===
+                normalizeCategory(category.name),
+          ),
+        }))
+        .filter((section) => section.items.length > 0),
+    [displayedCategories, displayedItems],
+  );
 
   return (
     <section
@@ -357,18 +493,25 @@ export function Menu({
               </div>
             ) : (
               <div className="mt-16 space-y-16">
-                {groupedItems.map(([category, categoryItems], index) => (
-                  <section key={category}>
-                    <div className="mb-7 border-b border-border pb-5">
-                      <p className="text-[0.65rem] font-semibold tracking-[0.2em] text-gold uppercase">
-                        {String(index + 1).padStart(2, "0")}
-                      </p>
-                      <h2 className="mt-2 font-display text-4xl text-gold-light">
-                        {category}
-                      </h2>
+                {groupedSections.map(({ category, items }, index) => (
+                  <section id={category.slug} key={category.id}>
+                    <div className="mb-8 border-b border-border pb-6">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                        <div>
+                          <p className="text-[0.65rem] font-semibold tracking-[0.2em] text-gold uppercase">
+                            Sezione {String(index + 1).padStart(2, "0")}
+                          </p>
+                          <h2 className="mt-2 font-display text-4xl text-gold-light sm:text-5xl">
+                            {category.name}
+                          </h2>
+                        </div>
+                        <p className="max-w-xl text-sm leading-7 text-noir-gray sm:text-right">
+                          {getCategoryIntroduction(category)}
+                        </p>
+                      </div>
                     </div>
                     <div className="grid gap-7 md:grid-cols-2 lg:grid-cols-3">
-                      {categoryItems.map((item) => (
+                      {items.map((item) => (
                         <PublicMenuCard cocktail={item} key={item.id} />
                       ))}
                     </div>

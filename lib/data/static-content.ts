@@ -270,11 +270,11 @@ export const contactInfo = {
 
 export const footerLinks = {
   quick: [
-    { label: "Home", href: "#home" },
-    { label: "Experience", href: "#experience" },
-    { label: "Gallery", href: "#gallery" },
-    { label: "Eventi", href: "#eventi" },
-    { label: "Contatti", href: "#contatti" },
+    { label: "Home", href: "/#home" },
+    { label: "Experience", href: "/#experience" },
+    { label: "Gallery", href: "/#gallery" },
+    { label: "Eventi", href: "/#events" },
+    { label: "Contatti", href: "/#contact" },
   ] satisfies ContentLink[],
   social: [
     { label: "Instagram", href: "https://www.instagram.com/" },

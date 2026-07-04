@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu as MenuIcon, X } from "lucide-react";
-import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { PremiumButton } from "@/components/ui/premium-button";
@@ -10,16 +10,15 @@ import { useReservationModal } from "@/components/providers/reservation-modal-pr
 import { cn } from "@/lib/utils";
 
 const navigation = [
-  { label: "Home", href: "#home" },
-  { label: "Menu", href: "#menu" },
-  { label: "Experience", href: "#experience" },
-  { label: "Gallery", href: "#gallery" },
-  { label: "Eventi", href: "#eventi" },
-  { label: "Contatti", href: "#contatti" },
+  { label: "Home", href: "/#home" },
+  { label: "Menu", href: "/menu" },
+  { label: "Experience", href: "/#experience" },
+  { label: "Gallery", href: "/#gallery" },
+  { label: "Eventi", href: "/#events" },
+  { label: "Contatti", href: "/#contact" },
 ];
 
 export function Navbar() {
-  const pathname = usePathname();
   const { openReservation } = useReservationModal();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -51,8 +50,6 @@ export function Navbar() {
   }, [isMenuOpen]);
 
   const closeMenu = () => setIsMenuOpen(false);
-  const getNavigationHref = (href: string) =>
-    href === "#menu" && pathname !== "/" ? "/menu#menu" : href;
 
   return (
     <>
@@ -68,22 +65,22 @@ export function Navbar() {
           aria-label="Navigazione principale"
           className="mx-auto flex h-20 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8"
         >
-          <a
+          <Link
             className="font-display text-3xl font-semibold tracking-[0.08em] text-gold-light"
-            href="#home"
+            href="/#home"
           >
             Noir
-          </a>
+          </Link>
 
           <div className="hidden items-center gap-8 lg:flex">
             {navigation.map((item) => (
-              <a
+              <Link
                 className="text-xs font-medium tracking-[0.12em] text-noir-gray uppercase transition-colors duration-300 hover:text-gold-light"
-                href={getNavigationHref(item.href)}
+                href={item.href}
                 key={item.href}
               >
                 {item.label}
-              </a>
+              </Link>
             ))}
           </div>
 
@@ -133,13 +130,13 @@ export function Navbar() {
               transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
             >
               <div className="flex items-center justify-between">
-                <a
+                <Link
                   className="font-display text-3xl font-semibold tracking-[0.08em] text-gold-light"
-                  href="#home"
+                  href="/#home"
                   onClick={closeMenu}
                 >
                   Noir
-                </a>
+                </Link>
                 <button
                   aria-label="Chiudi il menu"
                   className="inline-flex size-11 items-center justify-center rounded-full border border-border bg-card text-noir-white"
@@ -152,14 +149,14 @@ export function Navbar() {
 
               <div className="mt-16 flex flex-col">
                 {navigation.map((item) => (
-                  <a
+                  <Link
                     className="border-b border-border py-5 font-display text-3xl text-noir-white"
-                    href={getNavigationHref(item.href)}
+                    href={item.href}
                     key={item.href}
                     onClick={closeMenu}
                   >
                     {item.label}
-                  </a>
+                  </Link>
                 ))}
               </div>
 

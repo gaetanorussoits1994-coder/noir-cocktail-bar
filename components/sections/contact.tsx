@@ -48,7 +48,7 @@ export function Contact() {
   return (
     <section
       className="relative w-full max-w-full overflow-hidden bg-background-primary px-4 py-24 sm:px-6 sm:py-32 lg:px-8"
-      id="contatti"
+      id="contact"
     >
       <div
         aria-hidden="true"

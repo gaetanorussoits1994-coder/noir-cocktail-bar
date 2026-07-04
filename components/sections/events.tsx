@@ -90,7 +90,7 @@ export function Events() {
   return (
     <section
       className="w-full max-w-full overflow-hidden bg-background-primary px-4 py-24 sm:px-6 sm:py-32 lg:px-8"
-      id="eventi"
+      id="events"
     >
       <div className="mx-auto max-w-7xl">
         <SectionTitle
