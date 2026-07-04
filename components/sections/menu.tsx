@@ -30,6 +30,15 @@ type PublicCocktail = {
   price: number | null;
   ingredients: string | null;
   alcohol_level: string | null;
+  story?: string | null;
+  glassware?: string | null;
+  garnish?: string | null;
+  preparation_technique?: string | null;
+  staff_recommendation?: string | null;
+  pairing?: string | null;
+  product_style?: string | null;
+  serving_format?: string | null;
+  serving_temperature?: string | null;
   tags: string[] | null;
   is_featured: boolean;
   is_available: boolean;
@@ -73,59 +82,71 @@ const fallbackCategories: PublicMenuCategory[] = fallbackMenu.map(
 );
 
 const categoryIntroductions: Record<string, string> = {
-  "Negroni Collection":
-    "Il grande classico italiano attraversa sfumature affumicate, agrumate e contemporanee.",
   "Cocktail Signature":
-    "Creazioni originali firmate Noir, costruite con ingredienti ricercati e carattere deciso.",
+    "Creazioni originali firmate Noir, costruite con ingredienti riconoscibili e una precisa identità.",
   "Cocktail Classici":
-    "I grandi codici della miscelazione, eseguiti con precisione e sensibilità moderna.",
-  "Aperitivi Noir":
-    "Proposte luminose e avvolgenti, pensate per dare il tono alla serata.",
-  "Cicchetti / Shottini":
-    "Piccoli assaggi dal carattere netto, da condividere o scoprire in un solo sorso.",
-  "Alcolici Premium":
-    "Distillati ed etichette selezionate per una degustazione essenziale e raffinata.",
-  "Champagne & Bollicine":
-    "Bollicine eleganti, maison iconiche e bottiglie scelte per celebrare ogni momento.",
-  Analcolici:
-    "Esperienze alcohol free curate con la stessa profondità delle nostre miscelazioni.",
+    "I grandi codici della miscelazione internazionale, eseguiti nel rispetto delle ricette.",
+  "Negroni Collection":
+    "Il classico italiano e le sue variazioni più autorevoli, dal vermouth al mezcal.",
+  Champagne:
+    "Maison iconiche e cuvée selezionate per brindisi e occasioni speciali.",
+  Prosecco:
+    "Bollicine italiane fresche e immediate, ideali per aprire la serata.",
+  "Vini Bianchi":
+    "Etichette fresche, minerali o aromatiche servite alla temperatura ideale.",
+  "Vini Rossi":
+    "Rossi italiani scelti per struttura, equilibrio e vocazione gastronomica.",
+  Birre:
+    "Lager, stout e weiss tra grandi classici italiani e internazionali.",
+  "Cocktail Analcolici":
+    "Miscelazioni alcohol free costruite con succhi, botaniche e mixer di qualità.",
+  "Soft Drinks":
+    "Bibite classiche, toniche e mixer premium serviti ben freddi.",
+  Acque:
+    "Acque minerali naturali e frizzanti in diversi formati.",
+  Caffetteria:
+    "Espresso e proposte calde preparate al momento.",
   "Food & Cicchetti":
-    "Piccoli piatti e abbinamenti pensati per accompagnare il ritmo della notte.",
+    "Piatti da condividere e piccoli assaggi pensati per accompagnare la drink list.",
+  Dolci:
+    "Finali golosi in formato essenziale, preparati per chiudere la serata con misura.",
 };
 
-const catalogCategoryNames = [
+const homeCategoryNames = [
   "Cocktail Signature",
   "Cocktail Classici",
   "Negroni Collection",
-  "Champagne & Bollicine",
+  "Champagne",
   "Food & Cicchetti",
+];
+
+const fullCategoryNames = [
+  "Cocktail Signature",
+  "Cocktail Classici",
+  "Negroni Collection",
+  "Champagne",
+  "Prosecco",
+  "Vini Bianchi",
+  "Vini Rossi",
+  "Birre",
+  "Cocktail Analcolici",
+  "Soft Drinks",
+  "Acque",
+  "Caffetteria",
+  "Food & Cicchetti",
+  "Dolci",
 ];
 
 function normalizeCategory(value: string | null | undefined) {
   return (value || "").trim().toLocaleLowerCase("it-IT");
 }
 
-function getPremiumDescription(cocktail: PublicCocktail) {
-  const description = cocktail.description?.trim() || "";
-  const sentences = description
-    .split(/[.!?]+/)
-    .map((sentence) => sentence.trim())
-    .filter(Boolean);
+function canonicalizeCategoryName(value: string) {
+  const normalizedValue = normalizeCategory(value);
 
-  if (sentences.length >= 2) return description;
-
-  const opening = description
-    ? `${description.replace(/[.!?]+$/, "")}.`
-    : `${cocktail.name} interpreta l'anima ${
-        cocktail.category
-          ? `della selezione ${cocktail.category}`
-          : "di Noir"
-      } con equilibrio e personalità.`;
-  const finish = cocktail.ingredients?.trim()
-    ? `Le note di ${cocktail.ingredients} costruiscono un sorso elegante, profondo e persistente.`
-    : "Una composizione elegante e precisa, pensata per lasciare un ricordo persistente.";
-
-  return `${opening} ${finish}`;
+  if (normalizedValue === "champagne & bollicine") return "Champagne";
+  if (normalizedValue === "analcolici") return "Cocktail Analcolici";
+  return value;
 }
 
 function getCategoryIntroduction(category: PublicMenuCategory) {
@@ -189,7 +210,7 @@ function formatTag(tag: string) {
 
 function PublicMenuCard({ cocktail }: { cocktail: PublicCocktail }) {
   const cocktailSlug = getMenuItemSlug(cocktail);
-  const premiumDescription = getPremiumDescription(cocktail);
+  const description = cocktail.description?.trim();
   const displayTags = getDisplayTags(cocktail.tags);
   const allergens = getMenuAllergens(cocktail);
   const displayedAllergens =
@@ -209,7 +230,7 @@ function PublicMenuCard({ cocktail }: { cocktail: PublicCocktail }) {
       whileInView={{ opacity: 1, y: 0 }}
     >
       <Link
-        aria-label={`Scopri il cocktail ${cocktail.name}`}
+        aria-label={`Scopri il prodotto ${cocktail.name}`}
         className="flex h-full flex-col focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-gold"
         href={`/cocktails/${encodeURIComponent(cocktailSlug)}`}
       >
@@ -240,9 +261,11 @@ function PublicMenuCard({ cocktail }: { cocktail: PublicCocktail }) {
             </span>
           </div>
 
-          <p className="mt-4 text-sm leading-7 text-noir-gray">
-            {premiumDescription}
-          </p>
+          {description && (
+            <p className="mt-4 text-sm leading-7 text-noir-gray">
+              {description}
+            </p>
+          )}
 
           {cocktail.ingredients && (
             <p className="mt-3 text-xs leading-6 text-noir-gray">
@@ -299,6 +322,9 @@ export function Menu({
   featuredOnly = true,
   standalone = false,
 }: MenuProps) {
+  const categoryNames = featuredOnly
+    ? homeCategoryNames
+    : fullCategoryNames;
   const fallbackItems = fallbackCocktails;
   const [menuItems, setMenuItems] = useState<PublicCocktail[]>([]);
   const [menuCategories, setMenuCategories] = useState<
@@ -356,8 +382,13 @@ export function Menu({
 
         const activeCategories = (
           (categoriesResult.data ?? []) as PublicMenuCategory[]
-        ).sort((first, second) => first.sort_order - second.sort_order);
-        const catalogCategories = catalogCategoryNames.map(
+        )
+          .map((category) => ({
+            ...category,
+            name: canonicalizeCategoryName(category.name),
+          }))
+          .sort((first, second) => first.sort_order - second.sort_order);
+        const catalogCategories = categoryNames.map(
           (categoryName, index) =>
             activeCategories.find(
               (category) =>
@@ -431,7 +462,7 @@ export function Menu({
         );
       }
     },
-    [featuredOnly],
+    [categoryNames, featuredOnly],
   );
 
   useEffect(() => {
@@ -471,7 +502,7 @@ export function Menu({
     () =>
       displayedCategories
         .filter((category) =>
-          catalogCategoryNames.some(
+          categoryNames.some(
             (name) =>
               normalizeCategory(name) ===
               normalizeCategory(category.name),
@@ -487,7 +518,7 @@ export function Menu({
           ),
         }))
         .filter((section) => section.items.length > 0),
-    [displayedCategories, displayedItems],
+    [categoryNames, displayedCategories, displayedItems],
   );
 
   return (
