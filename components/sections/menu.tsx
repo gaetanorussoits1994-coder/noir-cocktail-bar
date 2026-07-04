@@ -11,22 +11,20 @@ import { fallbackMenu } from "@/lib/data/static-content";
 import { getSupabaseClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
-type MenuStatus = "loading" | "live" | "fallback";
-
 type PublicCocktail = {
   id: string;
   name: string;
-  slug: string;
-  category: string;
+  slug: string | null;
+  category: string | null;
   description: string | null;
   price: number | null;
   image_url: string | null;
   ingredients: string | null;
   alcohol_level: string | null;
-  tags: string[];
+  tags: string[] | null;
   is_featured: boolean;
   is_available: boolean;
-  display_order: number;
+  display_order: number | null;
 };
 
 const fallbackCocktails: PublicCocktail[] = fallbackMenu.flatMap((category) =>
@@ -53,11 +51,12 @@ function logMenuError(error: {
   hint?: string;
   code?: string;
 }) {
-  console.error("[PublicMenu] Supabase select error", {
-    message: error.message,
-    details: error.details,
-    hint: error.hint,
-    code: error.code,
+  console.error("[PublicMenu] Supabase select error:", {
+    message: error?.message,
+    details: error?.details,
+    hint: error?.hint,
+    code: error?.code,
+    fullError: JSON.stringify(error, null, 2),
   });
 }
 
@@ -70,6 +69,16 @@ function formatPrice(price: number | null) {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   }).format(price);
+}
+
+function createCocktailSlug(slug: string | null | undefined, name: string) {
+  return (slug?.trim() || name)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 function formatTag(tag: string) {
@@ -98,6 +107,8 @@ function formatTag(tag: string) {
 }
 
 function PublicMenuCard({ cocktail }: { cocktail: PublicCocktail }) {
+  const cocktailSlug = createCocktailSlug(cocktail.slug, cocktail.name);
+
   return (
     <motion.article
       className="group h-full overflow-hidden rounded-card border border-border bg-card shadow-soft backdrop-blur-sm transition-[border-color,box-shadow] duration-500 hover:border-gold/45 hover:shadow-[0_28px_80px_rgba(200,169,106,0.16)]"
@@ -110,7 +121,7 @@ function PublicMenuCard({ cocktail }: { cocktail: PublicCocktail }) {
       <Link
         aria-label={`Scopri il cocktail ${cocktail.name}`}
         className="flex h-full flex-col focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-gold"
-        href={`/cocktails/${encodeURIComponent(cocktail.slug)}`}
+        href={`/cocktails/${encodeURIComponent(cocktailSlug)}`}
       >
         <div className="relative h-[220px] overflow-hidden bg-background-secondary md:h-[280px]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -122,7 +133,7 @@ function PublicMenuCard({ cocktail }: { cocktail: PublicCocktail }) {
                 event.currentTarget.src = "/images/noir-negroni.png";
               }
             }}
-            src={cocktail.image_url?.trim() || "/images/noir-negroni.png"}
+            src={cocktail.image_url || "/images/noir-negroni.png"}
             style={{ height: "100%", objectFit: "cover", width: "100%" }}
           />
           <div
@@ -133,7 +144,7 @@ function PublicMenuCard({ cocktail }: { cocktail: PublicCocktail }) {
 
         <div className="flex flex-1 flex-col p-6 sm:p-7">
           <p className="text-[0.62rem] font-semibold tracking-[0.18em] text-gold uppercase">
-            {cocktail.category}
+            {cocktail.category || "Cocktail"}
           </p>
           <div className="mt-2 flex items-start justify-between gap-5">
             <div className="flex min-w-0 items-center gap-2">
@@ -169,9 +180,9 @@ function PublicMenuCard({ cocktail }: { cocktail: PublicCocktail }) {
             </p>
           )}
 
-          {cocktail.tags.length > 0 && (
+          {(cocktail.tags ?? []).length > 0 && (
             <div className="mt-5 flex flex-wrap gap-2">
-              {cocktail.tags.map((tag) => (
+              {(cocktail.tags ?? []).map((tag) => (
                 <span
                   className="rounded-full border border-gold/20 bg-gold/[0.06] px-3 py-1.5 text-[0.62rem] font-semibold tracking-[0.08em] text-gold-light uppercase"
                   key={`${cocktail.id}-${tag}`}
@@ -203,9 +214,9 @@ export function Menu({
         : fallbackCocktails,
     [featuredOnly],
   );
-  const [items, setItems] = useState<PublicCocktail[]>(fallbackItems);
-  const [status, setStatus] = useState<MenuStatus>("loading");
-  const [fallbackMessage, setFallbackMessage] = useState("");
+  const [menuItems, setMenuItems] = useState<PublicCocktail[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   const loadMenu = useCallback(
     async (isCurrent: () => boolean) => {
@@ -213,9 +224,9 @@ export function Menu({
 
       if (!supabase) {
         if (isCurrent()) {
-          setItems(fallbackItems);
-          setStatus("fallback");
-          setFallbackMessage(
+          setMenuItems([]);
+          setIsLoading(false);
+          setLoadError(
             "Menu online non disponibile: mostriamo la selezione Noir.",
           );
         }
@@ -223,36 +234,40 @@ export function Menu({
       }
 
       try {
-        let query = supabase
+        console.log("[PublicMenu] Loading menu_items from Supabase");
+
+        const { data, error } = await supabase
           .from("menu_items")
-          .select(
-            "id, name, slug, category, description, price, image_url, ingredients, alcohol_level, tags, is_featured, is_available, display_order",
-          )
-          .eq("is_available", true)
-          .order("display_order", { ascending: true })
-          .order("created_at", { ascending: true });
+          .select("*")
+          .eq("is_available", true);
 
-        if (featuredOnly) {
-          query = query.eq("is_featured", true);
-        }
-
-        const { data, error } = await query;
         if (!isCurrent()) return;
 
         if (error) {
           logMenuError(error);
-          setItems(fallbackItems);
-          setStatus("fallback");
-          setFallbackMessage(
+          setMenuItems([]);
+          setIsLoading(false);
+          setLoadError(
             "Il menu live è momentaneamente non disponibile. Ti mostriamo la selezione Noir.",
           );
           return;
         }
 
-        if (!data?.length) {
-          setItems(fallbackItems);
-          setStatus("fallback");
-          setFallbackMessage(
+        console.log("[PublicMenu] Loaded menu_items:", data);
+
+        const sortedItems = ([...(data ?? [])] as PublicCocktail[]).sort(
+          (first, second) =>
+            (first.display_order ?? 0) - (second.display_order ?? 0),
+        );
+        const visibleItems = featuredOnly
+          ? sortedItems.filter((item) => item.is_featured)
+          : sortedItems;
+
+        setMenuItems(visibleItems);
+        setIsLoading(false);
+
+        if (visibleItems.length === 0) {
+          setLoadError(
             featuredOnly
               ? "Le nuove creazioni Noir sono in arrivo."
               : "Il nuovo menu è in preparazione. Nel frattempo, scopri la selezione Noir.",
@@ -260,20 +275,18 @@ export function Menu({
           return;
         }
 
-        setItems(data as PublicCocktail[]);
-        setStatus("live");
-        setFallbackMessage("");
+        setLoadError("");
       } catch (unexpectedError) {
         console.error("[PublicMenu] Unexpected error", unexpectedError);
         if (!isCurrent()) return;
-        setItems(fallbackItems);
-        setStatus("fallback");
-        setFallbackMessage(
+        setMenuItems([]);
+        setIsLoading(false);
+        setLoadError(
           "Il menu live è momentaneamente non disponibile. Ti mostriamo la selezione Noir.",
         );
       }
     },
-    [fallbackItems, featuredOnly],
+    [featuredOnly],
   );
 
   useEffect(() => {
@@ -298,14 +311,17 @@ export function Menu({
     };
   }, [featuredOnly, loadMenu]);
 
+  const displayedItems =
+    menuItems.length > 0 ? menuItems : fallbackItems;
+
   const groupedItems = useMemo(() => {
     const groups = new Map<string, PublicCocktail[]>();
-    for (const item of items) {
+    for (const item of displayedItems) {
       const category = item.category?.trim() || "Cocktail";
       groups.set(category, [...(groups.get(category) ?? []), item]);
     }
     return Array.from(groups.entries());
-  }, [items]);
+  }, [displayedItems]);
 
   return (
     <section
@@ -326,7 +342,7 @@ export function Menu({
           title={featuredOnly ? "Cocktail Signature" : "Menu Noir"}
         />
 
-        {status === "loading" ? (
+        {isLoading ? (
           <div
             aria-label="Caricamento menu"
             className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-3"
@@ -341,18 +357,18 @@ export function Menu({
           </div>
         ) : (
           <>
-            {fallbackMessage && (
+            {loadError && (
               <p
                 className="mx-auto mt-10 max-w-2xl text-center text-sm leading-6 text-noir-gray"
                 role="status"
               >
-                {fallbackMessage}
+                {loadError}
               </p>
             )}
 
             {featuredOnly ? (
               <div className="mt-14 grid gap-7 md:grid-cols-2 lg:grid-cols-3">
-                {items.map((item) => (
+                {displayedItems.map((item) => (
                   <PublicMenuCard cocktail={item} key={item.id} />
                 ))}
               </div>

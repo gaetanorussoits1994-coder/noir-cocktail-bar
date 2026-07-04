@@ -136,13 +136,17 @@ export type MenuItemRow = {
   id: string;
   category_id: string | null;
   name: string;
+  slug: string;
+  category: string;
   description: string | null;
   ingredients: string | null;
   price: number | null;
   image_url: string | null;
+  alcohol_level: string | null;
   tags: string[];
   is_featured: boolean;
   is_available: boolean;
+  display_order: number;
   sort_order: number;
   created_at: string;
   updated_at: string;
@@ -245,7 +249,7 @@ export type Database = {
       >;
       menu_items: TableDefinition<
         MenuItemRow,
-        "name",
+        "name" | "slug" | "category",
         [
           {
             foreignKeyName: "menu_items_category_id_fkey";

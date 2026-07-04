@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu as MenuIcon, X } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { PremiumButton } from "@/components/ui/premium-button";
@@ -18,6 +19,7 @@ const navigation = [
 ];
 
 export function Navbar() {
+  const pathname = usePathname();
   const { openReservation } = useReservationModal();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -49,6 +51,8 @@ export function Navbar() {
   }, [isMenuOpen]);
 
   const closeMenu = () => setIsMenuOpen(false);
+  const getNavigationHref = (href: string) =>
+    href === "#menu" && pathname !== "/" ? "/menu#menu" : href;
 
   return (
     <>
@@ -75,7 +79,7 @@ export function Navbar() {
             {navigation.map((item) => (
               <a
                 className="text-xs font-medium tracking-[0.12em] text-noir-gray uppercase transition-colors duration-300 hover:text-gold-light"
-                href={item.href}
+                href={getNavigationHref(item.href)}
                 key={item.href}
               >
                 {item.label}
@@ -150,7 +154,7 @@ export function Navbar() {
                 {navigation.map((item) => (
                   <a
                     className="border-b border-border py-5 font-display text-3xl text-noir-white"
-                    href={item.href}
+                    href={getNavigationHref(item.href)}
                     key={item.href}
                     onClick={closeMenu}
                   >
