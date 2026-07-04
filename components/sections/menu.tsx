@@ -1,29 +1,17 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { ArrowUpRight, Star } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import {
+  MenuCocktailCard,
+  type PublicCocktail,
+} from "@/components/cards/menu-cocktail-card";
 import { PremiumButton } from "@/components/ui/premium-button";
 import { SectionTitle } from "@/components/ui/section-title";
 import { fallbackMenu } from "@/lib/data/static-content";
 import { getSupabaseClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
-
-type PublicCocktail = {
-  id: string;
-  name: string;
-  slug: string;
-  category: string;
-  description: string | null;
-  price: number | null;
-  image_url: string | null;
-  ingredients: string | null;
-  alcohol_level: string | null;
-  is_featured: boolean;
-  is_available: boolean;
-  display_order: number;
-};
 
 type MenuStatus = "loading" | "live" | "fallback";
 
@@ -38,22 +26,12 @@ const fallbackCocktails: PublicCocktail[] = fallbackMenu.flatMap((category) =>
     image_url: item.imageUrl,
     ingredients: item.ingredients || null,
     alcohol_level: null,
+    tags: item.tags,
     is_featured: item.isFeatured,
     is_available: true,
     display_order: item.sortOrder,
   })),
 );
-
-function formatPrice(price: number | null) {
-  if (price === null) return "Su richiesta";
-
-  return new Intl.NumberFormat("it-IT", {
-    style: "currency",
-    currency: "EUR",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(price);
-}
 
 function logMenuError(error: {
   message: string;
@@ -108,7 +86,7 @@ export function Menu({
         let query = supabase
           .from("menu_items")
           .select(
-            "id, name, slug, category, description, price, image_url, ingredients, alcohol_level, is_featured, is_available, display_order",
+            "id, name, slug, category, description, price, image_url, ingredients, alcohol_level, tags, is_featured, is_available, display_order",
           )
           .eq("is_available", true)
           .order("display_order", { ascending: true })
@@ -189,71 +167,6 @@ export function Menu({
     return Array.from(groups.entries());
   }, [items]);
 
-  const renderCard = (item: PublicCocktail) => (
-    <motion.article
-      className="group overflow-hidden rounded-card border border-border bg-card shadow-soft backdrop-blur-sm"
-      initial={{ opacity: 0, y: 24 }}
-      key={item.id}
-      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      viewport={{ amount: 0.15, once: true }}
-      whileHover={{ y: -5 }}
-      whileInView={{ opacity: 1, y: 0 }}
-    >
-      {item.image_url && (
-        <div
-          aria-label={`Cocktail ${item.name}`}
-          className="h-56 bg-cover bg-center transition-transform duration-700 group-hover:scale-[1.02]"
-          role="img"
-          style={{ backgroundImage: `url("${item.image_url}")` }}
-        />
-      )}
-      <div className="p-6">
-        <div className="flex items-start justify-between gap-5">
-          <div className="min-w-0">
-            <p className="text-[0.62rem] font-semibold tracking-[0.18em] text-gold uppercase">
-              {item.category}
-            </p>
-            <div className="mt-2 flex items-center gap-2">
-              <h3 className="font-display text-3xl text-gold-light">
-                {item.name}
-              </h3>
-              {item.is_featured && (
-                <Star
-                  aria-label="Cocktail in evidenza"
-                  className="shrink-0 text-gold"
-                  fill="currentColor"
-                  size={13}
-                />
-              )}
-            </div>
-          </div>
-          <span className="shrink-0 pt-6 text-sm font-semibold text-gold">
-            {formatPrice(item.price)}
-          </span>
-        </div>
-
-        {item.description && (
-          <p className="mt-4 text-sm leading-7 text-noir-gray">
-            {item.description}
-          </p>
-        )}
-        {item.ingredients && (
-          <p className="mt-3 text-xs leading-6 text-noir-gray">
-            <span className="font-semibold tracking-[0.08em] text-gold uppercase">
-              Ingredienti:
-            </span>{" "}
-            {item.ingredients}
-          </p>
-        )}
-        {item.alcohol_level && (
-          <p className="mt-3 text-xs tracking-[0.08em] text-noir-gray uppercase">
-            {item.alcohol_level}
-          </p>
-        )}
-      </div>
-    </motion.article>
-  );
-
   return (
     <section
       className={cn(
@@ -299,7 +212,9 @@ export function Menu({
 
             {featuredOnly ? (
               <div className="mt-14 grid gap-7 md:grid-cols-2 lg:grid-cols-3">
-                {items.map(renderCard)}
+                {items.map((item) => (
+                  <MenuCocktailCard cocktail={item} key={item.id} />
+                ))}
               </div>
             ) : (
               <div className="mt-16 space-y-16">
@@ -314,7 +229,9 @@ export function Menu({
                       </h2>
                     </div>
                     <div className="grid gap-7 md:grid-cols-2 lg:grid-cols-3">
-                      {categoryItems.map(renderCard)}
+                      {categoryItems.map((item) => (
+                        <MenuCocktailCard cocktail={item} key={item.id} />
+                      ))}
                     </div>
                   </section>
                 ))}
