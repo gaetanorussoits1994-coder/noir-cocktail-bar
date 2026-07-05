@@ -13,10 +13,18 @@ import {
   getMenuAllergens,
 } from "@/lib/menu-allergens";
 import {
+  localizeAllergen,
+  localizeMenuCategory,
+  localizeMenuCategoryIntroduction,
+  localizeMenuItem,
+  localizeMenuTag,
+} from "@/lib/i18n/menu-content";
+import {
   deduplicateMenuItems,
   getMenuItemSlug,
   slugifyMenuValue,
 } from "@/lib/menu-items";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { getSupabaseClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
@@ -110,6 +118,8 @@ const categoryIntroductions: Record<string, string> = {
     "Piatti da condividere e piccoli assaggi pensati per accompagnare la drink list.",
   Dolci:
     "Finali golosi in formato essenziale, preparati per chiudere la serata con misura.",
+  Amari:
+    "Una selezione italiana di amari da meditazione e fine pasto.",
 };
 
 const homeCategoryNames = [
@@ -135,6 +145,7 @@ const fullCategoryNames = [
   "Caffetteria",
   "Food & Cicchetti",
   "Dolci",
+  "Amari",
 ];
 
 function normalizeCategory(value: string | null | undefined) {
@@ -149,8 +160,17 @@ function canonicalizeCategoryName(value: string) {
   return value;
 }
 
-function getCategoryIntroduction(category: PublicMenuCategory) {
+function getCategoryIntroduction(
+  category: PublicMenuCategory,
+  locale: "it" | "en",
+) {
+  const translatedIntroduction = localizeMenuCategoryIntroduction(
+    category.name,
+    locale,
+  );
+
   return (
+    translatedIntroduction ||
     category.description?.trim() ||
     categoryIntroductions[category.name] ||
     `Una selezione Noir dedicata a ${category.name}, curata con equilibrio e personalità.`
@@ -172,10 +192,14 @@ function logMenuError(error: {
   });
 }
 
-function formatPrice(price: number | null) {
-  if (price === null) return "Su richiesta";
+function formatPrice(
+  price: number | null,
+  locale: "it" | "en",
+  onRequest: string,
+) {
+  if (price === null) return onRequest;
 
-  return new Intl.NumberFormat("it-IT", {
+  return new Intl.NumberFormat(locale === "en" ? "en-IE" : "it-IT", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 0,
@@ -209,15 +233,18 @@ function formatTag(tag: string) {
 }
 
 function PublicMenuCard({ cocktail }: { cocktail: PublicCocktail }) {
+  const { locale, t } = useTranslation();
   const cocktailSlug = getMenuItemSlug(cocktail);
-  const description = cocktail.description?.trim();
+  const localizedItem = localizeMenuItem(cocktail, locale);
+  const description = localizedItem.description;
+  const ingredients = localizedItem.ingredients;
   const displayTags = getDisplayTags(cocktail.tags);
   const allergens = getMenuAllergens(cocktail);
   const displayedAllergens =
     allergens.length > 0
       ? allergens
       : normalizeCategory(cocktail.category).includes("food")
-        ? [{ icon: "ℹ️", label: "Chiedi allo staff" }]
+        ? [{ icon: "ℹ️", label: t("menu.askStaff") }]
         : [];
 
   return (
@@ -230,7 +257,7 @@ function PublicMenuCard({ cocktail }: { cocktail: PublicCocktail }) {
       whileInView={{ opacity: 1, y: 0 }}
     >
       <Link
-        aria-label={`Scopri il prodotto ${cocktail.name}`}
+        aria-label={`${t("menu.discoverProduct")} ${cocktail.name}`}
         className="flex h-full flex-col focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-gold"
         href={`/cocktails/${encodeURIComponent(cocktailSlug)}`}
       >
@@ -240,7 +267,10 @@ function PublicMenuCard({ cocktail }: { cocktail: PublicCocktail }) {
         />
         <div className="flex flex-1 flex-col p-6 sm:p-8">
           <p className="text-[0.62rem] font-semibold tracking-[0.18em] text-gold uppercase">
-            {cocktail.category || "Cocktail"}
+            {localizeMenuCategory(
+              cocktail.category || "Cocktail",
+              locale,
+            )}
           </p>
           <div className="mt-2 flex items-start justify-between gap-5">
             <div className="flex min-w-0 items-center gap-2">
@@ -249,7 +279,7 @@ function PublicMenuCard({ cocktail }: { cocktail: PublicCocktail }) {
               </h3>
               {cocktail.is_featured && (
                 <Star
-                  aria-label="Cocktail in evidenza"
+                  aria-label={t("menu.featuredBadge")}
                   className="shrink-0 text-gold"
                   fill="currentColor"
                   size={13}
@@ -257,7 +287,7 @@ function PublicMenuCard({ cocktail }: { cocktail: PublicCocktail }) {
               )}
             </div>
             <span className="shrink-0 pt-1 text-sm font-semibold text-gold">
-              {formatPrice(cocktail.price)}
+              {formatPrice(cocktail.price, locale, t("menu.onRequest"))}
             </span>
           </div>
 
@@ -267,12 +297,12 @@ function PublicMenuCard({ cocktail }: { cocktail: PublicCocktail }) {
             </p>
           )}
 
-          {cocktail.ingredients && (
+          {ingredients && (
             <p className="mt-3 text-xs leading-6 text-noir-gray">
               <span className="font-semibold tracking-[0.08em] text-gold uppercase">
-                Ingredienti:
+                {t("menu.ingredients")}:
               </span>{" "}
-              {cocktail.ingredients}
+              {ingredients}
             </p>
           )}
 
@@ -283,7 +313,7 @@ function PublicMenuCard({ cocktail }: { cocktail: PublicCocktail }) {
                   className="rounded-full border border-gold/20 bg-gold/[0.06] px-3 py-1.5 text-[0.62rem] font-semibold tracking-[0.08em] text-gold-light uppercase"
                   key={`${cocktail.id}-${tag}`}
                 >
-                  {formatTag(tag)}
+                  {formatTag(localizeMenuTag(tag, locale))}
                 </span>
               ))}
             </div>
@@ -292,7 +322,7 @@ function PublicMenuCard({ cocktail }: { cocktail: PublicCocktail }) {
           {displayedAllergens.length > 0 && (
             <div className="mt-5 border-t border-border pt-4">
               <p className="text-[0.6rem] font-semibold tracking-[0.14em] text-gold uppercase">
-                Allergeni
+                {t("menu.allergens")}
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {displayedAllergens.map((allergen) => (
@@ -301,12 +331,16 @@ function PublicMenuCard({ cocktail }: { cocktail: PublicCocktail }) {
                     key={allergen.label}
                   >
                     <span aria-hidden="true">{allergen.icon}</span>{" "}
-                    {allergen.label}
+                    {localizeAllergen(allergen.label, locale)}
                   </span>
                 ))}
               </div>
             </div>
           )}
+
+          <span className="mt-auto pt-6 text-xs font-semibold tracking-[0.12em] text-gold uppercase">
+            {t("menu.discoverProduct")} →
+          </span>
         </div>
       </Link>
     </motion.article>
@@ -322,6 +356,7 @@ export function Menu({
   featuredOnly = true,
   standalone = false,
 }: MenuProps) {
+  const { locale, t } = useTranslation();
   const categoryNames = featuredOnly
     ? homeCategoryNames
     : fullCategoryNames;
@@ -492,8 +527,18 @@ export function Menu({
     };
   }, [featuredOnly, loadMenu]);
 
+  const hasLiveAmari = menuItems.some(
+    (item) => normalizeCategory(item.category) === "amari",
+  );
+  const amariFallbackItems = fallbackItems.filter(
+    (item) => normalizeCategory(item.category) === "amari",
+  );
   const displayedItems = deduplicateMenuItems(
-    menuItems.length > 0 ? menuItems : fallbackItems,
+    menuItems.length > 0
+      ? hasLiveAmari
+        ? menuItems
+        : [...menuItems, ...amariFallbackItems]
+      : fallbackItems,
   );
   const displayedCategories =
     menuCategories.length > 0 ? menuCategories : fallbackCategories;
@@ -531,18 +576,22 @@ export function Menu({
     >
       <div className="mx-auto max-w-7xl">
         <SectionTitle
-          description={
+          description={t(
             featuredOnly
-              ? "Le creazioni scelte dai nostri bartender: carattere Noir, ingredienti ricercati e dettagli inattesi."
-              : "Cocktail signature, grandi classici e proposte Noir: scopri la selezione completa."
-          }
-          label={featuredOnly ? "In evidenza" : "La nostra selezione"}
-          title={featuredOnly ? "Cocktail Signature" : "Menu Noir"}
+              ? "menu.featuredDescription"
+              : "menu.fullDescription",
+          )}
+          label={t(
+            featuredOnly ? "menu.featuredLabel" : "menu.fullLabel",
+          )}
+          title={t(
+            featuredOnly ? "menu.featuredTitle" : "menu.fullTitle",
+          )}
         />
 
         {isLoading ? (
           <div
-            aria-label="Caricamento menu"
+            aria-label={t("menu.loading")}
             className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-3"
             role="status"
           >
@@ -560,7 +609,7 @@ export function Menu({
                 className="mx-auto mt-10 max-w-2xl text-center text-sm leading-6 text-noir-gray"
                 role="status"
               >
-                {loadError}
+                {locale === "en" ? t("menu.liveFallback") : loadError}
               </p>
             )}
 
@@ -576,14 +625,15 @@ export function Menu({
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                         <div>
                           <p className="text-[0.65rem] font-semibold tracking-[0.2em] text-gold uppercase">
-                            Sezione {String(index + 1).padStart(2, "0")}
+                            {t("menu.section")}{" "}
+                            {String(index + 1).padStart(2, "0")}
                           </p>
                           <h2 className="mt-2 font-display text-4xl text-gold-light sm:text-5xl">
-                            {category.name}
+                            {localizeMenuCategory(category.name, locale)}
                           </h2>
                         </div>
                         <p className="max-w-xl text-sm leading-7 text-noir-gray sm:text-right">
-                          {getCategoryIntroduction(category)}
+                          {getCategoryIntroduction(category, locale)}
                         </p>
                       </div>
                     </div>
@@ -595,7 +645,7 @@ export function Menu({
                     {featuredOnly && (
                       <div className="mt-8 flex justify-center">
                         <PremiumButton href="/menu" variant="outline">
-                          Scopri tutto il menu
+                          {t("menu.discoverAll")}
                           <ArrowUpRight aria-hidden="true" size={16} />
                         </PremiumButton>
                       </div>

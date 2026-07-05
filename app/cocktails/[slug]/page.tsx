@@ -19,6 +19,12 @@ import {
   getDisplayTags,
   getMenuAllergens,
 } from "@/lib/menu-allergens";
+import {
+  deduplicateMenuItems,
+  isMenuItemSlug,
+  slugifyMenuValue,
+} from "@/lib/menu-items";
+import { fallbackMenu } from "@/lib/data/static-content";
 import { getSupabaseClient } from "@/lib/supabase";
 
 type DetailStatus = "loading" | "ready" | "not-found";
@@ -42,38 +48,23 @@ function logCocktailError(error: unknown) {
   });
 }
 
-function createCocktailSlug(slug: string | null | undefined, name = "") {
-  return (slug?.trim() || name)
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-function getLongDescription(cocktail: PublicCocktail) {
-  const description = cocktail.description?.trim() || "";
-  const sentences = description
-    .split(/[.!?]+/)
-    .map((sentence) => sentence.trim())
-    .filter(Boolean);
-
-  if (sentences.length >= 2) return description;
-
-  const opening = description
-    ? `${description.replace(/[.!?]+$/, "")}.`
-    : `${cocktail.name} è una creazione Noir dal profilo elegante e contemporaneo.`;
-  const ingredients = cocktail.ingredients
-    ? `La composizione unisce ${cocktail.ingredients} in un equilibrio preciso e persistente.`
-    : "La sua struttura nasce da una ricerca attenta di equilibrio, profondità e persistenza.";
-
-  return `${opening} ${ingredients}`;
-}
-
-function getCocktailStory(cocktail: PublicCocktail) {
-  return `${cocktail.name} nasce dal dialogo tra la cultura della miscelazione internazionale e l'estetica contemporanea di Noir. La ricetta valorizza l'identità della categoria ${cocktail.category}, trasformandola in un'esperienza pensata per il ritmo della notte.`;
-}
+const fallbackCocktails: PublicCocktail[] = fallbackMenu.flatMap((category) =>
+  category.items.map((item) => ({
+    id: item.id,
+    name: item.name,
+    slug: slugifyMenuValue(item.name),
+    category: category.name,
+    description: item.description || null,
+    price: item.price,
+    image_url: item.imageUrl,
+    ingredients: item.ingredients || null,
+    alcohol_level: null,
+    tags: item.tags,
+    is_featured: item.isFeatured,
+    is_available: true,
+    display_order: item.sortOrder,
+  })),
+);
 
 export default function CocktailDetailPage() {
   const params = useParams<{ slug: string }>();
@@ -88,58 +79,42 @@ export default function CocktailDetailPage() {
     const supabase = getSupabaseClient();
     let isMounted = true;
 
-    if (!supabase || !params.slug) {
+    setStatus("loading");
+    setCocktail(null);
+    setRelatedCocktails([]);
+
+    if (!params.slug) {
       setStatus("not-found");
       return;
     }
 
-    const client = supabase;
-
     async function loadCocktail() {
-      const requestedSlug = createCocktailSlug(params.slug);
-      const selectFields = "*";
+      let availableCocktails: PublicCocktail[] = [];
 
-      const { data, error } = await client
-        .from("menu_items")
-        .select(selectFields)
-        .eq("slug", requestedSlug)
-        .eq("is_available", true)
-        .limit(1);
-
-      if (!isMounted) return;
-
-      if (error) {
-        logCocktailError(error);
-        setStatus("not-found");
-        return;
-      }
-
-      let selectedCocktail = data?.[0] as PublicCocktail | undefined;
-
-      if (!selectedCocktail) {
-        const {
-          data: availableCocktails,
-          error: fallbackError,
-        } = await client
+      if (supabase) {
+        const { data, error } = await supabase
           .from("menu_items")
-          .select(selectFields)
+          .select("*")
           .eq("is_available", true);
 
         if (!isMounted) return;
 
-        if (fallbackError) {
-          logCocktailError(fallbackError);
-          setStatus("not-found");
-          return;
+        if (error) {
+          logCocktailError(error);
+        } else {
+          availableCocktails = deduplicateMenuItems(
+            (data ?? []) as PublicCocktail[],
+          );
         }
-
-        selectedCocktail = (
-          (availableCocktails ?? []) as PublicCocktail[]
-        ).find(
-          (item) =>
-            createCocktailSlug(item.slug, item.name) === requestedSlug,
-        );
       }
+
+      const selectedCocktail =
+        availableCocktails.find((item) =>
+          isMenuItemSlug(item, params.slug),
+        ) ||
+        fallbackCocktails.find((item) =>
+          isMenuItemSlug(item, params.slug),
+        );
 
       if (!selectedCocktail) {
         setStatus("not-found");
@@ -147,24 +122,25 @@ export default function CocktailDetailPage() {
       }
 
       setCocktail(selectedCocktail);
+      const relatedSource =
+        availableCocktails.length > 0
+          ? availableCocktails
+          : fallbackCocktails;
 
-      const { data: relatedData, error: relatedError } = await client
-        .from("menu_items")
-        .select(selectFields)
-        .eq("is_available", true)
-        .eq("category", selectedCocktail.category)
-        .neq("id", selectedCocktail.id)
-        .order("display_order", { ascending: true })
-        .limit(3);
-
-      if (relatedError) {
-        logCocktailError(relatedError);
-        setRelatedCocktails([]);
-      } else {
-        setRelatedCocktails(
-          (relatedData ?? []) as PublicCocktail[],
-        );
-      }
+      setRelatedCocktails(
+        deduplicateMenuItems(relatedSource)
+          .filter(
+            (item) =>
+              item.id !== selectedCocktail.id &&
+              slugifyMenuValue(item.category) ===
+                slugifyMenuValue(selectedCocktail.category),
+          )
+          .sort(
+            (first, second) =>
+              (first.display_order ?? 0) - (second.display_order ?? 0),
+          )
+          .slice(0, 3),
+      );
       setStatus("ready");
     }
 
@@ -196,7 +172,7 @@ export default function CocktailDetailPage() {
               <Martini aria-hidden="true" size={26} />
             </span>
             <h1 className="mt-6 font-display text-5xl text-gold-light">
-              Cocktail non trovato
+              Prodotto non trovato
             </h1>
             <p className="mx-auto mt-4 max-w-lg text-sm leading-7 text-noir-gray">
               Questa creazione non è disponibile oppure il menu è in fase di
@@ -224,8 +200,18 @@ export default function CocktailDetailPage() {
         ? [{ icon: "ℹ️", label: "Chiedi allo staff" }]
         : [];
   const displayTags = getDisplayTags(cocktail.tags);
-  const longDescription = getLongDescription(cocktail);
-  const cocktailStory = getCocktailStory(cocktail);
+  const serviceDetails = [
+    { label: "Stile", value: cocktail.product_style },
+    { label: "Gradazione", value: cocktail.alcohol_level },
+    { label: "Bicchiere consigliato", value: cocktail.glassware },
+    { label: "Garnish", value: cocktail.garnish },
+    { label: "Tecnica", value: cocktail.preparation_technique },
+    { label: "Formato", value: cocktail.serving_format },
+    {
+      label: "Temperatura di servizio",
+      value: cocktail.serving_temperature,
+    },
+  ].filter((detail) => Boolean(detail.value));
 
   return (
     <>
@@ -233,7 +219,7 @@ export default function CocktailDetailPage() {
         <section className="relative min-h-[62vh] overflow-hidden border-b border-border">
           {cocktail.image_url ? (
             <div
-              aria-label={`Cocktail ${cocktail.name}`}
+              aria-label={`Prodotto ${cocktail.name}`}
               className="absolute inset-0 bg-cover bg-center"
               role="img"
               style={{
@@ -282,22 +268,26 @@ export default function CocktailDetailPage() {
               whileInView={{ opacity: 1, y: 0 }}
             >
               <p className="text-[0.65rem] font-semibold tracking-[0.2em] text-gold uppercase">
-                La creazione
+                Il prodotto
               </p>
               <h2 className="mt-3 font-display text-4xl text-gold-light">
-                Dentro il bicchiere
+                Identità e carattere
               </h2>
-              <p className="mt-6 max-w-2xl text-base leading-8 text-noir-gray">
-                {longDescription}
-              </p>
-              <div className="mt-10 border-t border-border pt-8">
-                <p className="text-[0.65rem] font-semibold tracking-[0.2em] text-gold uppercase">
-                  La storia
+              {cocktail.description && (
+                <p className="mt-6 max-w-2xl text-base leading-8 text-noir-gray">
+                  {cocktail.description}
                 </p>
-                <p className="mt-4 max-w-2xl text-sm leading-8 text-noir-gray sm:text-base">
-                  {cocktailStory}
-                </p>
-              </div>
+              )}
+              {cocktail.story && (
+                <div className="mt-10 border-t border-border pt-8">
+                  <p className="text-[0.65rem] font-semibold tracking-[0.2em] text-gold uppercase">
+                    Storia e origine
+                  </p>
+                  <p className="mt-4 max-w-2xl text-sm leading-8 text-noir-gray sm:text-base">
+                    {cocktail.story}
+                  </p>
+                </div>
+              )}
               <CocktailBadges className="mt-7" tags={displayTags} />
               {displayedAllergens.length > 0 && (
                 <div className="mt-8">
@@ -330,20 +320,43 @@ export default function CocktailDetailPage() {
                 {cocktail.ingredients && (
                   <div>
                     <dt className="text-[0.62rem] font-semibold tracking-[0.16em] text-gold uppercase">
-                      Ingredienti
+                      Prodotti e ingredienti
                     </dt>
                     <dd className="mt-2 text-sm leading-7 text-noir-gray">
                       {cocktail.ingredients}
                     </dd>
                   </div>
                 )}
-                {cocktail.alcohol_level && (
-                  <div className="border-t border-border pt-6">
+                {serviceDetails.map((detail) => (
+                  <div
+                    className="border-t border-border pt-6"
+                    key={detail.label}
+                  >
                     <dt className="text-[0.62rem] font-semibold tracking-[0.16em] text-gold uppercase">
-                      Gradazione
+                      {detail.label}
                     </dt>
                     <dd className="mt-2 text-sm text-noir-white">
-                      {cocktail.alcohol_level}
+                      {detail.value}
+                    </dd>
+                  </div>
+                ))}
+                {cocktail.staff_recommendation && (
+                  <div className="border-t border-border pt-6">
+                    <dt className="text-[0.62rem] font-semibold tracking-[0.16em] text-gold uppercase">
+                      Il consiglio dello staff
+                    </dt>
+                    <dd className="mt-2 text-sm leading-7 text-noir-gray">
+                      {cocktail.staff_recommendation}
+                    </dd>
+                  </div>
+                )}
+                {cocktail.pairing && (
+                  <div className="border-t border-border pt-6">
+                    <dt className="text-[0.62rem] font-semibold tracking-[0.16em] text-gold uppercase">
+                      Abbinamento consigliato
+                    </dt>
+                    <dd className="mt-2 text-sm leading-7 text-noir-gray">
+                      {cocktail.pairing}
                     </dd>
                   </div>
                 )}
@@ -359,6 +372,14 @@ export default function CocktailDetailPage() {
               >
                 Prenota un tavolo
               </PremiumButton>
+              <PremiumButton
+                className="mt-3 w-full"
+                href="/menu"
+                variant="outline"
+              >
+                <ArrowLeft aria-hidden="true" size={15} />
+                Torna al menu
+              </PremiumButton>
             </motion.aside>
           </div>
         </section>
@@ -370,7 +391,7 @@ export default function CocktailDetailPage() {
                 Continua l&apos;esperienza
               </p>
               <h2 className="mt-3 font-display text-4xl text-gold-light sm:text-5xl">
-                Cocktail correlati
+                Prodotti correlati
               </h2>
               <div className="mt-10 grid gap-7 md:grid-cols-2 lg:grid-cols-3">
                 {relatedCocktails.map((relatedCocktail) => (

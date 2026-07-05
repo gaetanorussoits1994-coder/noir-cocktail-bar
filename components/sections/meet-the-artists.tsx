@@ -5,6 +5,7 @@ import { motion, type Variants } from "framer-motion";
 import { ArtistCard } from "@/components/cards/artist-card";
 import { SectionTitle } from "@/components/ui/section-title";
 import { artists } from "@/lib/data/static-content";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 const gridVariants: Variants = {
   hidden: {},
@@ -16,6 +17,26 @@ const gridVariants: Variants = {
 };
 
 export function MeetTheArtists() {
+  const { t } = useTranslation();
+  const artistTranslations = [
+    {
+      specialty: t("artists.alessandro.specialty"),
+      quote: t("artists.alessandro.quote"),
+    },
+    {
+      specialty: t("artists.sofia.specialty"),
+      quote: t("artists.sofia.quote"),
+    },
+    {
+      specialty: t("artists.lorenzo.specialty"),
+      quote: t("artists.lorenzo.quote"),
+    },
+  ];
+  const localizedArtists = artists.map((artist, index) => ({
+    ...artist,
+    ...(artistTranslations[index] || artistTranslations[0]),
+  }));
+
   return (
     <section
       className="w-full max-w-full overflow-hidden bg-background-primary px-4 py-24 sm:px-6 sm:py-32 lg:px-8"
@@ -29,9 +50,9 @@ export function MeetTheArtists() {
           whileInView={{ opacity: 1, y: 0 }}
         >
           <SectionTitle
-            description="Dietro ogni creazione ci sono sensibilità, tecnica e ricerca: incontra gli artisti che danno forma all'esperienza Noir."
-            label="The People Behind Noir"
-            title="Meet the Artists"
+            description={t("artists.description")}
+            label={t("artists.label")}
+            title={t("artists.title")}
           />
         </motion.div>
 
@@ -42,7 +63,7 @@ export function MeetTheArtists() {
           viewport={{ amount: 0.12, once: true }}
           whileInView="visible"
         >
-          {artists.map((artist) => (
+          {localizedArtists.map((artist) => (
             <ArtistCard {...artist} key={artist.name} />
           ))}
         </motion.div>

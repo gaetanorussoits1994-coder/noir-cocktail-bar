@@ -12,6 +12,7 @@ import {
 } from "react";
 
 import { ReservationForm } from "@/components/sections/reservation-form";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 type ReservationModalContextValue = {
   openReservation: () => void;
@@ -39,6 +40,7 @@ type ReservationModalProviderProps = {
 export function ReservationModalProvider({
   children,
 }: ReservationModalProviderProps) {
+  const { t } = useTranslation();
   const [isReservationOpen, setIsReservationOpen] = useState(false);
 
   useEffect(() => {
@@ -93,10 +95,10 @@ export function ReservationModalProvider({
                 transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
               >
                 <h2 className="sr-only" id="reservation-modal-title">
-                  Prenota un tavolo
+                  {t("nav.booking")}
                 </h2>
                 <button
-                  aria-label="Chiudi il modulo di prenotazione"
+                  aria-label={t("a11y.closeBooking")}
                   className="absolute top-4 right-4 z-10 flex size-10 items-center justify-center rounded-full border border-white/10 bg-background-primary/90 text-noir-white transition hover:border-gold/50 hover:text-gold"
                   onClick={closeReservation}
                   type="button"

@@ -11,6 +11,7 @@ import {
 } from "@/components/cards/testimonial-card";
 import { SectionTitle } from "@/components/ui/section-title";
 import { awards } from "@/lib/data/static-content";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { getSupabaseClient } from "@/lib/supabase";
 
 type TestimonialRow = {
@@ -34,9 +35,34 @@ const testimonialVariants: Variants = {
 };
 
 export function TestimonialsAwards() {
+  const { locale, t } = useTranslation();
   const [testimonials, setTestimonials] = useState<TestimonialItem[]>(
     [],
   );
+  const translatedFallbackTestimonials: TestimonialItem[] = [
+    {
+      id: "fallback-marco",
+      name: "Marco Bellini",
+      text: t("testimonials.marco"),
+      rating: 5,
+    },
+    {
+      id: "fallback-giulia",
+      name: "Giulia Ferri",
+      text: t("testimonials.giulia"),
+      rating: 5,
+    },
+    {
+      id: "fallback-davide",
+      name: "Davide Romano",
+      text: t("testimonials.davide"),
+      rating: 5,
+    },
+  ];
+  const displayedTestimonials =
+    locale === "en" || testimonials.length === 0
+      ? translatedFallbackTestimonials
+      : testimonials;
 
   useEffect(() => {
     const supabase = getSupabaseClient();
@@ -89,9 +115,9 @@ export function TestimonialsAwards() {
     >
       <div className="mx-auto max-w-7xl">
         <SectionTitle
-          description="Esperienze raccontate dai nostri ospiti e riconoscimenti che celebrano la visione di Noir."
-          label="Guest Stories"
-          title="Testimonials & Awards"
+          description={t("testimonials.description")}
+          label={t("testimonials.label")}
+          title={t("testimonials.title")}
         />
 
         <div className="mt-14 grid items-start gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
@@ -102,7 +128,7 @@ export function TestimonialsAwards() {
             viewport={{ amount: 0.15, once: true }}
             whileInView="visible"
           >
-            {testimonials.map((testimonial) => (
+            {displayedTestimonials.map((testimonial) => (
               <TestimonialCard
                 key={testimonial.id}
                 name={testimonial.name}
@@ -121,7 +147,7 @@ export function TestimonialsAwards() {
             <div className="mb-7 flex items-center gap-4">
               <span className="h-px w-10 bg-gold" />
               <h3 className="text-xs font-semibold tracking-[0.28em] text-gold uppercase">
-                Awards
+                {t("testimonials.awards")}
               </h3>
             </div>
 

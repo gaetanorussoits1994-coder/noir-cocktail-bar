@@ -6,6 +6,7 @@ import Image from "next/image";
 
 import { PremiumButton } from "@/components/ui/premium-button";
 import { SectionTitle } from "@/components/ui/section-title";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 const revealTransition = {
   duration: 0.85,
@@ -13,6 +14,8 @@ const revealTransition = {
 };
 
 export function Experience() {
+  const { t } = useTranslation();
+
   return (
     <section
       className="w-full max-w-full overflow-hidden bg-background-secondary px-4 py-24 sm:px-6 sm:py-32 lg:px-8"
@@ -51,16 +54,13 @@ export function Experience() {
         >
           <SectionTitle
             align="left"
-            description="Cocktail, atmosfera e dettagli pensati per offrire un'esperienza unica."
-            label="Experience"
-            title="The Art of Mixology"
+            description={t("experience.description")}
+            label={t("experience.label")}
+            title={t("experience.title")}
           />
 
           <p className="mt-6 max-w-xl text-sm leading-7 text-noir-gray sm:text-base sm:leading-8">
-            Ogni cocktail nasce da ingredienti selezionati, tecniche moderne e
-            passione per la miscelazione. Noir Cocktail Bar è un luogo dove
-            design, musica e sapori si fondono per creare un&apos;esperienza
-            memorabile.
+            {t("experience.body")}
           </p>
 
           <PremiumButton
@@ -68,7 +68,7 @@ export function Experience() {
             href="/about"
             variant="outline"
           >
-            Scopri la nostra storia
+            {t("cta.discoverStory")}
             <ArrowUpRight aria-hidden="true" size={17} strokeWidth={1.5} />
           </PremiumButton>
         </motion.div>

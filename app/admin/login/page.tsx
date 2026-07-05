@@ -5,9 +5,30 @@ import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
 export default function AdminLoginPage() {
+  const { locale, t } = useTranslation();
+  const copy =
+    locale === "it"
+      ? {
+          intro: "Accedi per gestire prenotazioni, menu ed esperienze Noir.",
+          signIn: "Accedi",
+          signingIn: "Accesso in corso...",
+          invalid: "Email o password non corrette.",
+          unavailable: "Configurazione Supabase non disponibile.",
+          connection: "Impossibile contattare il servizio di autenticazione. Riprova tra poco.",
+        }
+      : {
+          intro: "Sign in to manage bookings, menus and Noir experiences.",
+          signIn: "Sign in",
+          signingIn: "Signing in...",
+          invalid: "Incorrect email or password.",
+          unavailable: "Supabase configuration is unavailable.",
+          connection: "Unable to contact the authentication service. Please try again shortly.",
+        };
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -60,7 +81,7 @@ export default function AdminLoginPage() {
     const supabase = getSupabaseClient();
 
     if (!supabase) {
-      setError("Configurazione Supabase non disponibile.");
+      setError(copy.unavailable);
       setIsSubmitting(false);
       return;
     }
@@ -73,16 +94,14 @@ export default function AdminLoginPage() {
         });
 
       if (signInError || !data.session || !data.user) {
-        setError("Email o password non corrette.");
+        setError(copy.invalid);
         return;
       }
 
       router.replace("/admin");
       router.refresh();
     } catch {
-      setError(
-        "Impossibile contattare il servizio di autenticazione. Riprova tra poco.",
-      );
+      setError(copy.connection);
     } finally {
       setIsSubmitting(false);
     }
@@ -100,6 +119,9 @@ export default function AdminLoginPage() {
       />
 
       <section className="relative z-10 w-full max-w-md rounded-[1.5rem] border border-gold/20 bg-background-secondary/90 p-6 shadow-[0_30px_100px_rgba(0,0,0,0.55)] backdrop-blur-xl sm:p-9">
+        <div className="flex justify-end">
+          <LanguageSwitcher />
+        </div>
         <div className="flex items-center justify-center">
           <span className="flex size-14 items-center justify-center rounded-full border border-gold/30 bg-gold/10 text-gold shadow-gold">
             <Martini size={23} strokeWidth={1.5} />
@@ -114,7 +136,7 @@ export default function AdminLoginPage() {
             Noir Administration
           </h1>
           <p className="mt-3 text-sm leading-6 text-noir-gray">
-            Accedi per gestire prenotazioni, menu ed esperienze Noir.
+            {copy.intro}
           </p>
         </div>
 
@@ -170,10 +192,10 @@ export default function AdminLoginPage() {
             type="submit"
           >
             {isCheckingSession
-              ? "Verifica sessione..."
+              ? t("admin.sessionCheck")
               : isSubmitting
-                ? "Accesso in corso..."
-                : "Accedi"}
+                ? copy.signingIn
+                : copy.signIn}
             {!isCheckingSession && !isSubmitting && <ArrowRight size={17} />}
           </button>
         </form>

@@ -143,6 +143,15 @@ export type MenuItemRow = {
   price: number | null;
   image_url: string | null;
   alcohol_level: string | null;
+  story: string | null;
+  glassware: string | null;
+  garnish: string | null;
+  preparation_technique: string | null;
+  staff_recommendation: string | null;
+  pairing: string | null;
+  product_style: string | null;
+  serving_format: string | null;
+  serving_temperature: string | null;
   tags: string[];
   is_featured: boolean;
   is_available: boolean;

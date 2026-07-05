@@ -5,6 +5,7 @@ import type { FormEvent } from "react";
 import { useMemo, useState } from "react";
 
 import { getSupabaseClient } from "@/lib/supabase";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { cn } from "@/lib/utils";
 
 type ReservationFormState = {
@@ -69,6 +70,7 @@ type ReservationFormProps = {
 };
 
 export function ReservationForm({ id = "reservation-form" }: ReservationFormProps) {
+  const { t } = useTranslation();
   const [form, setForm] = useState(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -89,22 +91,22 @@ export function ReservationForm({ id = "reservation-form" }: ReservationFormProp
     const reservationDate = normalizeReservationDate(form.reservationDate);
 
     if (form.customerName.trim().length < 2) {
-      return "Inserisci un nome valido.";
+      return t("booking.error.name");
     }
     if (phoneDigits.length < 7) {
-      return "Inserisci un numero di telefono valido.";
+      return t("booking.error.phone");
     }
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      return "Inserisci un indirizzo email valido.";
+      return t("booking.error.email");
     }
     if (!reservationDate || reservationDate < minimumDate) {
-      return "Seleziona una data valida, da oggi in avanti.";
+      return t("booking.error.date");
     }
     if (!form.reservationTime) {
-      return "Seleziona un orario.";
+      return t("booking.error.time");
     }
     if (!Number.isInteger(guests) || guests < 1 || guests > 30) {
-      return "Il numero di persone deve essere compreso tra 1 e 30.";
+      return t("booking.error.guests");
     }
     return "";
   }
@@ -120,9 +122,7 @@ export function ReservationForm({ id = "reservation-form" }: ReservationFormProp
 
     const supabase = getSupabaseClient();
     if (!supabase) {
-      setError(
-        "Il servizio prenotazioni non è disponibile. Riprova tra poco o contattaci telefonicamente.",
-      );
+      setError(t("booking.error.unavailable"));
       return;
     }
 
@@ -166,9 +166,7 @@ export function ReservationForm({ id = "reservation-form" }: ReservationFormProp
       setForm(initialForm);
       setIsSuccess(true);
     } catch {
-      setError(
-        "Non è stato possibile inviare la richiesta. Riprova tra poco o contattaci telefonicamente.",
-      );
+      setError(t("booking.error.submit"));
     } finally {
       setIsSubmitting(false);
     }
@@ -185,18 +183,17 @@ export function ReservationForm({ id = "reservation-form" }: ReservationFormProp
           <CheckCircle2 aria-hidden="true" size={28} strokeWidth={1.5} />
         </span>
         <h3 className="mt-6 font-display text-3xl text-gold-light">
-          Richiesta ricevuta
+          {t("booking.successTitle")}
         </h3>
         <p className="mt-4 max-w-md text-sm leading-7 text-noir-gray">
-          Grazie, la tua richiesta di prenotazione è stata inviata. Ti
-          confermeremo la disponibilità il prima possibile.
+          {t("booking.successMessage")}
         </p>
         <button
           className="mt-7 text-xs font-semibold tracking-[0.12em] text-gold uppercase transition hover:text-gold-light"
           onClick={() => setIsSuccess(false)}
           type="button"
         >
-          Invia un&apos;altra richiesta
+          {t("booking.sendAnother")}
         </button>
       </div>
     );
@@ -211,23 +208,23 @@ export function ReservationForm({ id = "reservation-form" }: ReservationFormProp
     >
       <div className="border-b border-border pb-5">
         <p className="text-[0.65rem] font-semibold tracking-[0.2em] text-gold uppercase">
-          Richiesta tavolo
+          {t("booking.eyebrow")}
         </p>
         <h3 className="mt-2 font-display text-3xl text-gold-light">
-          Prenota la tua serata
+          {t("booking.title")}
         </h3>
       </div>
 
       <div className="mt-6 grid gap-5 sm:grid-cols-2">
         <label className="sm:col-span-2">
-          <span className={labelClass}>Nome *</span>
+          <span className={labelClass}>{t("booking.name")} *</span>
           <input
             autoComplete="name"
             className={inputClass}
             disabled={isSubmitting}
             maxLength={100}
             onChange={(event) => updateField("customerName", event.target.value)}
-            placeholder="Nome e cognome"
+            placeholder={t("booking.namePlaceholder")}
             required
             type="text"
             value={form.customerName}
@@ -235,7 +232,7 @@ export function ReservationForm({ id = "reservation-form" }: ReservationFormProp
         </label>
 
         <label>
-          <span className={labelClass}>Telefono *</span>
+          <span className={labelClass}>{t("booking.phone")} *</span>
           <input
             autoComplete="tel"
             className={inputClass}
@@ -250,7 +247,7 @@ export function ReservationForm({ id = "reservation-form" }: ReservationFormProp
         </label>
 
         <label>
-          <span className={labelClass}>Email</span>
+          <span className={labelClass}>{t("booking.email")}</span>
           <input
             autoComplete="email"
             className={inputClass}
@@ -264,7 +261,7 @@ export function ReservationForm({ id = "reservation-form" }: ReservationFormProp
         </label>
 
         <label>
-          <span className={labelClass}>Data *</span>
+          <span className={labelClass}>{t("booking.date")} *</span>
           <input
             className={cn(inputClass, "[color-scheme:dark]")}
             disabled={isSubmitting}
@@ -279,7 +276,7 @@ export function ReservationForm({ id = "reservation-form" }: ReservationFormProp
         </label>
 
         <label>
-          <span className={labelClass}>Ora *</span>
+          <span className={labelClass}>{t("booking.time")} *</span>
           <input
             className={cn(inputClass, "[color-scheme:dark]")}
             disabled={isSubmitting}
@@ -293,7 +290,7 @@ export function ReservationForm({ id = "reservation-form" }: ReservationFormProp
         </label>
 
         <label>
-          <span className={labelClass}>Numero persone *</span>
+          <span className={labelClass}>{t("booking.guests")} *</span>
           <input
             className={inputClass}
             disabled={isSubmitting}
@@ -307,13 +304,13 @@ export function ReservationForm({ id = "reservation-form" }: ReservationFormProp
         </label>
 
         <label className="sm:col-span-2">
-          <span className={labelClass}>Note</span>
+          <span className={labelClass}>{t("booking.notes")}</span>
           <textarea
             className={cn(inputClass, "min-h-24 resize-y")}
             disabled={isSubmitting}
             maxLength={1000}
             onChange={(event) => updateField("notes", event.target.value)}
-            placeholder="Allergie, richieste speciali o altre informazioni"
+            placeholder={t("booking.notesPlaceholder")}
             value={form.notes}
           />
         </label>
@@ -336,11 +333,11 @@ export function ReservationForm({ id = "reservation-form" }: ReservationFormProp
         {isSubmitting && (
           <LoaderCircle aria-hidden="true" className="animate-spin" size={17} />
         )}
-        {isSubmitting ? "Invio in corso..." : "Invia richiesta"}
+        {isSubmitting ? t("booking.submitting") : t("booking.submit")}
       </button>
 
       <p className="mt-4 text-center text-xs leading-5 text-noir-gray">
-        La prenotazione sarà valida dopo la conferma dello staff.
+        {t("booking.notice")}
       </p>
     </form>
   );

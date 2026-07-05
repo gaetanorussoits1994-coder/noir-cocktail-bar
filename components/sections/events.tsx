@@ -8,6 +8,7 @@ import {
   type EventCardProps,
 } from "@/components/cards/event-card";
 import { SectionTitle } from "@/components/ui/section-title";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { getSupabaseClient } from "@/lib/supabase";
 
 type EventRow = {
@@ -36,7 +37,35 @@ function formatEventDate(eventDate: string | null) {
 }
 
 export function Events() {
+  const { locale, t } = useTranslation();
   const [events, setEvents] = useState<EventItem[]>([]);
+  const translatedFallbackEvents: EventItem[] = [
+    {
+      id: "fallback-jazz",
+      title: "Jazz Night",
+      schedule: t("events.jazz.schedule"),
+      description: t("events.jazz.description"),
+      number: "01",
+    },
+    {
+      id: "fallback-guest",
+      title: "Guest Bartender",
+      schedule: t("events.guest.schedule"),
+      description: t("events.guest.description"),
+      number: "02",
+    },
+    {
+      id: "fallback-private",
+      title: "Private Lounge",
+      schedule: t("events.private.schedule"),
+      description: t("events.private.description"),
+      number: "03",
+    },
+  ];
+  const displayedEvents =
+    locale === "en" || events.length === 0
+      ? translatedFallbackEvents
+      : events;
 
   useEffect(() => {
     const supabase = getSupabaseClient();
@@ -94,13 +123,13 @@ export function Events() {
     >
       <div className="mx-auto max-w-7xl">
         <SectionTitle
-          description="Appuntamenti esclusivi, ospiti speciali e atmosfere pensate per rendere ogni serata memorabile."
-          label="Noir Nights"
-          title="Eventi"
+          description={t("events.description")}
+          label={t("events.label")}
+          title={t("events.title")}
         />
 
         <div className="mt-14 grid gap-7 md:grid-cols-3">
-          {events.map((event, index) => (
+          {displayedEvents.map((event, index) => (
             <EventCard
               description={event.description}
               delay={index * 0.12}

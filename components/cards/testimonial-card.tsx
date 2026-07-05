@@ -2,6 +2,7 @@
 
 import { motion, type Variants } from "framer-motion";
 import { Star } from "lucide-react";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 const cardVariants: Variants = {
   hidden: { opacity: 0, y: 28 },
@@ -26,6 +27,8 @@ export function TestimonialCard({
   text,
   rating,
 }: TestimonialCardProps) {
+  const { t } = useTranslation();
+
   return (
     <motion.article
       className="relative overflow-hidden rounded-card border border-border bg-card p-6 shadow-soft backdrop-blur-sm sm:p-7"
@@ -44,7 +47,7 @@ export function TestimonialCard({
       </span>
 
       <div
-        aria-label={`${rating} stelle su 5`}
+        aria-label={`${rating} ${t("testimonials.rating")}`}
         className="relative flex gap-1 text-gold"
       >
         {Array.from({ length: rating }, (_, index) => (

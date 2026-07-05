@@ -25,9 +25,45 @@ import {
   primaryButtonClass,
   secondaryButtonClass,
 } from "@/components/admin/admin-ui";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import {
+  getMenuItemIdentity,
+  slugifyMenuValue,
+} from "@/lib/menu-items";
 import { getSupabaseClient } from "@/lib/supabase";
 import type { MenuItemRow } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
+
+const menuCopy = {
+  it: {
+    new: "Nuovo cocktail", edit: "Modifica cocktail", description: "Crea, pubblica e ordina i prodotti mostrati sul sito Noir.",
+    details: "Dettagli menu", close: "Chiudi form", name: "Nome", category: "Categoria", price: "Prezzo",
+    productDescription: "Descrizione", story: "Storia / origine", ingredients: "Ingredienti",
+    tags: "Tag e allergeni", tagsHelp: "Separa i valori con una virgola. Gli allergeni riconosciuti vengono mostrati automaticamente nelle card.",
+    alcohol: "Gradazione", style: "Stile prodotto", glass: "Bicchiere consigliato", technique: "Tecnica di preparazione",
+    format: "Formato di servizio", temperature: "Temperatura di servizio", recommendation: "Consiglio dello staff / chef",
+    pairing: "Abbinamento consigliato", order: "Ordine", availableSite: "Disponibile sul sito",
+    featuredHome: "In evidenza nella Home", saving: "Salvataggio...", save: "Salva prodotto", cancel: "Annulla",
+    published: "Prodotti pubblicati", allCategories: "Tutte le categorie", loading: "Caricamento menu...",
+    empty: "Nessun prodotto presente per questo filtro.", available: "Disponibile", hidden: "Nascosto",
+    editAction: "Modifica", hide: "Nascondi", publish: "Pubblica", removeFeatured: "Rimuovi featured",
+    putHome: "Metti in Home", delete: "Elimina",
+  },
+  en: {
+    new: "New product", edit: "Edit product", description: "Create, publish and arrange the products displayed on the Noir website.",
+    details: "Menu details", close: "Close form", name: "Name", category: "Category", price: "Price",
+    productDescription: "Description", story: "Story / origin", ingredients: "Ingredients",
+    tags: "Tags and allergens", tagsHelp: "Separate values with commas. Recognised allergens are automatically shown on cards.",
+    alcohol: "Alcohol level", style: "Product style", glass: "Recommended glassware", technique: "Preparation technique",
+    format: "Serving format", temperature: "Serving temperature", recommendation: "Staff / chef recommendation",
+    pairing: "Recommended pairing", order: "Display order", availableSite: "Available on website",
+    featuredHome: "Featured on homepage", saving: "Saving...", save: "Save product", cancel: "Cancel",
+    published: "Published products", allCategories: "All categories", loading: "Loading menu...",
+    empty: "No products found for this filter.", available: "Available", hidden: "Hidden",
+    editAction: "Edit", hide: "Hide", publish: "Publish", removeFeatured: "Remove featured",
+    putHome: "Feature on homepage", delete: "Delete",
+  },
+} as const;
 
 type MenuFormState = {
   name: string;
@@ -38,6 +74,15 @@ type MenuFormState = {
   ingredients: string;
   tags: string;
   alcoholLevel: string;
+  story: string;
+  glassware: string;
+  garnish: string;
+  preparationTechnique: string;
+  staffRecommendation: string;
+  pairing: string;
+  productStyle: string;
+  servingFormat: string;
+  servingTemperature: string;
   isFeatured: boolean;
   isAvailable: boolean;
   displayOrder: string;
@@ -52,6 +97,15 @@ const emptyForm: MenuFormState = {
   ingredients: "",
   tags: "",
   alcoholLevel: "",
+  story: "",
+  glassware: "",
+  garnish: "",
+  preparationTechnique: "",
+  staffRecommendation: "",
+  pairing: "",
+  productStyle: "",
+  servingFormat: "",
+  servingTemperature: "",
   isFeatured: false,
   isAvailable: true,
   displayOrder: "0",
@@ -60,26 +114,24 @@ const emptyForm: MenuFormState = {
 const suggestedCategories = [
   "Cocktail Signature",
   "Cocktail Classici",
-  "Aperitivi Noir",
-  "Alcolici Premium",
-  "Cicchetti / Shottini",
-  "Analcolici",
+  "Negroni Collection",
+  "Champagne",
+  "Prosecco",
+  "Vini Bianchi",
+  "Vini Rossi",
+  "Birre",
+  "Cocktail Analcolici",
+  "Soft Drinks",
+  "Acque",
+  "Caffetteria",
+  "Food & Cicchetti",
+  "Dolci",
 ];
 
 const priceFormatter = new Intl.NumberFormat("it-IT", {
   style: "currency",
   currency: "EUR",
 });
-
-function slugify(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
 
 function logSupabaseError(action: string, error: {
   message: string;
@@ -96,6 +148,8 @@ function logSupabaseError(action: string, error: {
 }
 
 export default function AdminMenuPage() {
+  const { locale } = useTranslation();
+  const labels = menuCopy[locale];
   const [items, setItems] = useState<MenuItemRow[]>([]);
   const [filterCategory, setFilterCategory] = useState("all");
   const [form, setForm] = useState<MenuFormState>(emptyForm);
@@ -167,8 +221,8 @@ export default function AdminMenuPage() {
       ...current,
       name: value,
       slug:
-        !editingId || current.slug === slugify(current.name)
-          ? slugify(value)
+        !editingId || current.slug === slugifyMenuValue(current.name)
+          ? slugifyMenuValue(value)
           : current.slug,
     }));
   }
@@ -191,6 +245,15 @@ export default function AdminMenuPage() {
       ingredients: item.ingredients || "",
       tags: item.tags.join(", "),
       alcoholLevel: item.alcohol_level || "",
+      story: item.story || "",
+      glassware: item.glassware || "",
+      garnish: item.garnish || "",
+      preparationTechnique: item.preparation_technique || "",
+      staffRecommendation: item.staff_recommendation || "",
+      pairing: item.pairing || "",
+      productStyle: item.product_style || "",
+      servingFormat: item.serving_format || "",
+      servingTemperature: item.serving_temperature || "",
       isFeatured: item.is_featured,
       isAvailable: item.is_available,
       displayOrder: item.display_order.toString(),
@@ -210,8 +273,10 @@ export default function AdminMenuPage() {
     const supabase = getSupabaseClient();
     if (!supabase) return;
 
-    const slug = slugify(form.slug || form.name);
-    if (!slug) {
+    const name = form.name.trim();
+    const category = form.category.trim();
+    const slug = slugifyMenuValue(form.slug || name);
+    if (!name || !category || !slug) {
       setError("Inserisci un nome o uno slug valido.");
       return;
     }
@@ -219,10 +284,42 @@ export default function AdminMenuPage() {
     setIsSaving(true);
     setError("");
 
+    const { data: existingItems, error: duplicateCheckError } =
+      await supabase
+        .from("menu_items")
+        .select("id, name, category");
+
+    if (duplicateCheckError) {
+      logSupabaseError(
+        "verifica duplicati menu_items",
+        duplicateCheckError,
+      );
+      setError(
+        "Non è stato possibile verificare eventuali duplicati. Riprova.",
+      );
+      setIsSaving(false);
+      return;
+    }
+
+    const productIdentity = getMenuItemIdentity({ name, category });
+    const duplicateItem = (existingItems ?? []).find(
+      (item) =>
+        item.id !== editingId &&
+        getMenuItemIdentity(item) === productIdentity,
+    );
+
+    if (duplicateItem) {
+      setError(
+        `Esiste già una voce “${name}” nella categoria “${category}”.`,
+      );
+      setIsSaving(false);
+      return;
+    }
+
     const payload = {
-      name: form.name.trim(),
+      name,
       slug,
-      category: form.category.trim(),
+      category,
       description: form.description.trim() || null,
       price: form.price ? Number(form.price) : null,
       ingredients: form.ingredients.trim() || null,
@@ -231,6 +328,18 @@ export default function AdminMenuPage() {
         .map((tag) => tag.trim())
         .filter(Boolean),
       alcohol_level: form.alcoholLevel.trim() || null,
+      story: form.story.trim() || null,
+      glassware: form.glassware.trim() || null,
+      garnish: form.garnish.trim() || null,
+      preparation_technique:
+        form.preparationTechnique.trim() || null,
+      staff_recommendation:
+        form.staffRecommendation.trim() || null,
+      pairing: form.pairing.trim() || null,
+      product_style: form.productStyle.trim() || null,
+      serving_format: form.servingFormat.trim() || null,
+      serving_temperature:
+        form.servingTemperature.trim() || null,
       is_featured: form.isFeatured,
       is_available: form.isAvailable,
       display_order: Number(form.displayOrder) || 0,
@@ -324,10 +433,10 @@ export default function AdminMenuPage() {
             type="button"
           >
             <Plus size={17} />
-            Nuovo cocktail
+            {labels.new}
           </button>
         }
-        description="Crea, pubblica e ordina i cocktail mostrati sul sito Noir."
+        description={labels.description}
         eyebrow="Food & beverage"
         title="Menu"
       />
@@ -339,14 +448,14 @@ export default function AdminMenuPage() {
           <div className="mb-6 flex items-start justify-between gap-4">
             <div>
               <p className="text-[0.65rem] font-semibold tracking-[0.18em] text-gold uppercase">
-                {editingId ? "Modifica cocktail" : "Nuovo cocktail"}
+                {editingId ? labels.edit : labels.new}
               </p>
               <h2 className="mt-2 font-display text-3xl text-gold-light">
-                Dettagli menu
+                {labels.details}
               </h2>
             </div>
             <button
-              aria-label="Chiudi form"
+              aria-label={labels.close}
               className={secondaryButtonClass}
               onClick={closeForm}
               type="button"
@@ -360,7 +469,7 @@ export default function AdminMenuPage() {
             onSubmit={handleSubmit}
           >
             <label>
-              <span className={labelClass}>Nome *</span>
+              <span className={labelClass}>{labels.name} *</span>
               <input
                 className={inputClass}
                 onChange={(event) => updateName(event.target.value)}
@@ -380,7 +489,7 @@ export default function AdminMenuPage() {
             </label>
 
             <label>
-              <span className={labelClass}>Categoria *</span>
+              <span className={labelClass}>{labels.category} *</span>
               <input
                 className={inputClass}
                 list="menu-categories"
@@ -398,7 +507,7 @@ export default function AdminMenuPage() {
             </label>
 
             <label>
-              <span className={labelClass}>Prezzo</span>
+              <span className={labelClass}>{labels.price}</span>
               <input
                 className={inputClass}
                 min="0"
@@ -410,7 +519,7 @@ export default function AdminMenuPage() {
             </label>
 
             <label className="md:col-span-2">
-              <span className={labelClass}>Descrizione</span>
+              <span className={labelClass}>{labels.productDescription}</span>
               <textarea
                 className={cn(inputClass, "min-h-24 resize-y")}
                 onChange={(event) =>
@@ -421,7 +530,18 @@ export default function AdminMenuPage() {
             </label>
 
             <label className="md:col-span-2">
-              <span className={labelClass}>Ingredienti</span>
+              <span className={labelClass}>{labels.story}</span>
+              <textarea
+                className={cn(inputClass, "min-h-20 resize-y")}
+                onChange={(event) =>
+                  updateField("story", event.target.value)
+                }
+                value={form.story}
+              />
+            </label>
+
+            <label className="md:col-span-2">
+              <span className={labelClass}>{labels.ingredients}</span>
               <textarea
                 className={cn(inputClass, "min-h-20 resize-y")}
                 onChange={(event) =>
@@ -432,7 +552,7 @@ export default function AdminMenuPage() {
             </label>
 
             <label className="md:col-span-2">
-              <span className={labelClass}>Tag e allergeni</span>
+              <span className={labelClass}>{labels.tags}</span>
               <input
                 className={inputClass}
                 onChange={(event) => updateField("tags", event.target.value)}
@@ -440,13 +560,12 @@ export default function AdminMenuPage() {
                 value={form.tags}
               />
               <span className="mt-2 block text-xs leading-5 text-noir-gray">
-                Separa i valori con una virgola. Gli allergeni riconosciuti
-                vengono mostrati automaticamente nelle card.
+                {labels.tagsHelp}
               </span>
             </label>
 
             <label>
-              <span className={labelClass}>Gradazione</span>
+              <span className={labelClass}>{labels.alcohol}</span>
               <input
                 className={inputClass}
                 onChange={(event) =>
@@ -458,7 +577,98 @@ export default function AdminMenuPage() {
             </label>
 
             <label>
-              <span className={labelClass}>Ordine</span>
+              <span className={labelClass}>{labels.style}</span>
+              <input
+                className={inputClass}
+                onChange={(event) =>
+                  updateField("productStyle", event.target.value)
+                }
+                placeholder="Es. Lager, Sour, Champagne Brut"
+                value={form.productStyle}
+              />
+            </label>
+
+            <label>
+              <span className={labelClass}>{labels.glass}</span>
+              <input
+                className={inputClass}
+                onChange={(event) =>
+                  updateField("glassware", event.target.value)
+                }
+                value={form.glassware}
+              />
+            </label>
+
+            <label>
+              <span className={labelClass}>Garnish</span>
+              <input
+                className={inputClass}
+                onChange={(event) =>
+                  updateField("garnish", event.target.value)
+                }
+                value={form.garnish}
+              />
+            </label>
+
+            <label>
+              <span className={labelClass}>{labels.technique}</span>
+              <input
+                className={inputClass}
+                onChange={(event) =>
+                  updateField("preparationTechnique", event.target.value)
+                }
+                value={form.preparationTechnique}
+              />
+            </label>
+
+            <label>
+              <span className={labelClass}>{labels.format}</span>
+              <input
+                className={inputClass}
+                onChange={(event) =>
+                  updateField("servingFormat", event.target.value)
+                }
+                placeholder="Es. 33 cl, calice 125 ml"
+                value={form.servingFormat}
+              />
+            </label>
+
+            <label>
+              <span className={labelClass}>{labels.temperature}</span>
+              <input
+                className={inputClass}
+                onChange={(event) =>
+                  updateField("servingTemperature", event.target.value)
+                }
+                placeholder="Es. 4–6 °C"
+                value={form.servingTemperature}
+              />
+            </label>
+
+            <label className="md:col-span-2">
+              <span className={labelClass}>{labels.recommendation}</span>
+              <textarea
+                className={cn(inputClass, "min-h-20 resize-y")}
+                onChange={(event) =>
+                  updateField("staffRecommendation", event.target.value)
+                }
+                value={form.staffRecommendation}
+              />
+            </label>
+
+            <label className="md:col-span-2">
+              <span className={labelClass}>{labels.pairing}</span>
+              <textarea
+                className={cn(inputClass, "min-h-20 resize-y")}
+                onChange={(event) =>
+                  updateField("pairing", event.target.value)
+                }
+                value={form.pairing}
+              />
+            </label>
+
+            <label>
+              <span className={labelClass}>{labels.order}</span>
               <input
                 className={inputClass}
                 min="0"
@@ -478,7 +688,7 @@ export default function AdminMenuPage() {
                 }
                 type="checkbox"
               />
-              Disponibile sul sito
+              {labels.availableSite}
             </label>
 
             <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/20 p-4 text-sm">
@@ -489,7 +699,7 @@ export default function AdminMenuPage() {
                 }
                 type="checkbox"
               />
-              In evidenza nella Home
+              {labels.featuredHome}
             </label>
 
             <div className="flex flex-wrap gap-3 md:col-span-2">
@@ -499,14 +709,14 @@ export default function AdminMenuPage() {
                 type="submit"
               >
                 <Save size={16} />
-                {isSaving ? "Salvataggio..." : "Salva cocktail"}
+                {isSaving ? labels.saving : labels.save}
               </button>
               <button
                 className={secondaryButtonClass}
                 onClick={closeForm}
                 type="button"
               >
-                Annulla
+                {labels.cancel}
               </button>
             </div>
           </form>
@@ -516,14 +726,14 @@ export default function AdminMenuPage() {
       <section>
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="font-display text-3xl text-gold-light">
-            Cocktail pubblicati
+            {labels.published}
           </h2>
           <select
             className={cn(inputClass, "sm:max-w-xs")}
             onChange={(event) => setFilterCategory(event.target.value)}
             value={filterCategory}
           >
-            <option value="all">Tutte le categorie</option>
+            <option value="all">{labels.allCategories}</option>
             {categories.map((category) => (
               <option key={category} value={category}>
                 {category}
@@ -533,9 +743,9 @@ export default function AdminMenuPage() {
         </div>
 
         {isLoading ? (
-          <AdminLoading label="Caricamento menu..." />
+          <AdminLoading label={labels.loading} />
         ) : filteredItems.length === 0 ? (
-          <AdminEmpty message="Nessun cocktail presente per questo filtro." />
+          <AdminEmpty message={labels.empty} />
         ) : (
           <div className="grid gap-4 lg:grid-cols-2">
             {filteredItems.map((item) => {
@@ -581,7 +791,7 @@ export default function AdminMenuPage() {
                             : "border-white/10 bg-white/[0.04] text-noir-gray",
                         )}
                       >
-                        {item.is_available ? "Disponibile" : "Nascosto"}
+                        {item.is_available ? labels.available : labels.hidden}
                       </span>
                       {item.is_featured && (
                         <span className="rounded-full border border-gold/25 bg-gold/10 px-2.5 py-1 text-[0.62rem] text-gold uppercase">
@@ -589,7 +799,7 @@ export default function AdminMenuPage() {
                         </span>
                       )}
                       <span className="rounded-full border border-white/10 px-2.5 py-1 text-[0.62rem] text-noir-gray">
-                        Ordine {item.display_order}
+                        {labels.order} {item.display_order}
                       </span>
                     </div>
 
@@ -601,7 +811,7 @@ export default function AdminMenuPage() {
                         type="button"
                       >
                         <Edit3 size={15} />
-                        Modifica
+                        {labels.editAction}
                       </button>
                       <button
                         className={secondaryButtonClass}
@@ -614,7 +824,7 @@ export default function AdminMenuPage() {
                         ) : (
                           <Eye size={15} />
                         )}
-                        {item.is_available ? "Nascondi" : "Pubblica"}
+                        {item.is_available ? labels.hide : labels.publish}
                       </button>
                       <button
                         className={secondaryButtonClass}
@@ -624,8 +834,8 @@ export default function AdminMenuPage() {
                       >
                         <Star size={15} />
                         {item.is_featured
-                          ? "Rimuovi featured"
-                          : "Metti in Home"}
+                          ? labels.removeFeatured
+                          : labels.putHome}
                       </button>
                       <button
                         className={dangerButtonClass}
@@ -634,7 +844,7 @@ export default function AdminMenuPage() {
                         type="button"
                       >
                         <Trash2 size={15} />
-                        Elimina
+                        {labels.delete}
                       </button>
                     </div>
                   </div>

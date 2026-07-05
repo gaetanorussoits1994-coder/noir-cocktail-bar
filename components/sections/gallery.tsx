@@ -10,6 +10,7 @@ import {
   type GalleryCardProps,
 } from "@/components/cards/gallery-card";
 import { SectionTitle } from "@/components/ui/section-title";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { getSupabaseClient } from "@/lib/supabase";
 
 type GalleryImageRow = {
@@ -56,8 +57,42 @@ function getAspectRatio(
 }
 
 export function Gallery() {
+  const { locale, t } = useTranslation();
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(-1);
+  const localizeCategory = (value: string) => {
+    if (locale === "it") return value;
+
+    const normalizedValue = value.trim().toLocaleLowerCase("it-IT");
+    if (normalizedValue.includes("cocktail")) {
+      return t("gallery.category.cocktail");
+    }
+    if (
+      normalizedValue.includes("atmosfera") ||
+      normalizedValue.includes("atmosphere")
+    ) {
+      return t("gallery.category.atmosphere");
+    }
+    if (
+      normalizedValue.includes("intern") ||
+      normalizedValue.includes("interior")
+    ) {
+      return t("gallery.category.interiors");
+    }
+    if (
+      normalizedValue.includes("dettagl") ||
+      normalizedValue.includes("detail")
+    ) {
+      return t("gallery.category.details");
+    }
+    if (
+      normalizedValue.includes("event") ||
+      normalizedValue.includes("serat")
+    ) {
+      return t("gallery.category.events");
+    }
+    return t("gallery.defaultCategory");
+  };
 
   useEffect(() => {
     const supabase = getSupabaseClient();
@@ -123,15 +158,16 @@ export function Gallery() {
     >
       <div className="mx-auto max-w-7xl">
         <SectionTitle
-          description="Dettagli, atmosfere e creazioni che raccontano l'essenza delle nostre notti."
-          label="Momenti Noir"
-          title="Gallery"
+          description={t("gallery.description")}
+          label={t("gallery.label")}
+          title={t("gallery.title")}
         />
 
         <div className="mt-14 columns-1 gap-6 sm:columns-2 lg:columns-3">
           {galleryItems.map((item, index) => (
             <GalleryCard
               {...item}
+              category={localizeCategory(item.category)}
               delay={(index % 3) * 0.08}
               key={item.id}
               onClick={() => setLightboxIndex(index)}

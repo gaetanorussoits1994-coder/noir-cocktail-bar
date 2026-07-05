@@ -6,6 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { PremiumButton } from "@/components/ui/premium-button";
 import { useReservationModal } from "@/components/providers/reservation-modal-provider";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { getSupabaseClient } from "@/lib/supabase";
 
 type HeroContent = {
@@ -66,6 +67,7 @@ const itemVariants: Variants = {
 
 export function Hero() {
   const { openReservation } = useReservationModal();
+  const { locale, t } = useTranslation();
   const [content, setContent] =
     useState<HeroContent>(initialHeroContent);
 
@@ -173,21 +175,27 @@ export function Hero() {
           className="break-words font-display text-5xl leading-[0.9] font-medium tracking-[-0.04em] text-gold-light drop-shadow-[0_0_36px_rgba(200,169,106,0.18)] [overflow-wrap:anywhere] min-[360px]:text-6xl sm:text-8xl lg:text-9xl"
           variants={itemVariants}
         >
-          {content.title}
+          {locale === "en"
+            ? t("hero.title")
+            : content.title || t("hero.title")}
         </motion.h1>
 
         <motion.p
           className="mt-7 text-xs font-medium tracking-[0.3em] text-noir-gray uppercase sm:text-sm"
           variants={itemVariants}
         >
-          {content.subtitle}
+          {locale === "en"
+            ? t("hero.subtitle")
+            : content.subtitle || t("hero.subtitle")}
         </motion.p>
 
         <motion.p
           className="mx-auto mt-5 max-w-xl text-sm leading-7 text-noir-gray sm:text-base"
           variants={itemVariants}
         >
-          {content.description}
+          {locale === "en"
+            ? t("hero.description")
+            : content.description || t("hero.description")}
         </motion.p>
 
         <motion.div
@@ -195,7 +203,7 @@ export function Hero() {
           variants={itemVariants}
         >
           <PremiumButton href="#menu">
-            Scopri il Menu
+            {t("hero.menuCta")}
           </PremiumButton>
           <PremiumButton
             href="#reservation-form"
@@ -205,20 +213,20 @@ export function Hero() {
             }}
             variant="secondary"
           >
-            Prenota un Tavolo
+            {t("hero.bookingCta")}
           </PremiumButton>
         </motion.div>
       </motion.section>
 
       <motion.a
         animate={{ opacity: 1 }}
-        aria-label="Scorri verso il contenuto"
+        aria-label={t("a11y.scrollContent")}
         className="absolute bottom-7 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-3 text-[0.6rem] font-medium tracking-[0.25em] text-noir-gray uppercase"
         href="#menu"
         initial={{ opacity: 0 }}
         transition={{ delay: 1.35, duration: 0.8 }}
       >
-        Scroll
+        {t("hero.scroll")}
         <span className="flex h-9 w-5 justify-center rounded-full border border-border pt-1.5">
           <motion.span
             animate={{ opacity: [0.35, 1, 0.35], y: [0, 9, 0] }}

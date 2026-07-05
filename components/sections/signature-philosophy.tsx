@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, type Variants, useReducedMotion } from "framer-motion";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 const contentVariants: Variants = {
   hidden: {},
@@ -23,10 +24,10 @@ const revealVariants: Variants = {
   },
 };
 
-const keywords = ["Balance", "Atmosphere", "Emotion"];
-
 export function SignaturePhilosophy() {
   const shouldReduceMotion = useReducedMotion();
+  const { t } = useTranslation();
+  const keywords = t("philosophy.keywords").split("|");
 
   return (
     <section
@@ -71,7 +72,7 @@ export function SignaturePhilosophy() {
         >
           <span className="h-px w-10 bg-gold/70" />
           <p className="text-[0.65rem] font-semibold tracking-[0.3em] text-gold uppercase">
-            Signature Philosophy
+            {t("philosophy.label")}
           </p>
           <span className="h-px w-10 bg-gold/70" />
         </motion.div>
@@ -80,15 +81,14 @@ export function SignaturePhilosophy() {
           className="mt-10 font-display text-[clamp(4rem,10vw,9rem)] leading-[0.88] font-medium tracking-[-0.045em] text-gold-light drop-shadow-[0_0_48px_rgba(200,169,106,0.12)]"
           variants={revealVariants}
         >
-          Every glass tells a story.
+          {t("philosophy.title")}
         </motion.h2>
 
         <motion.p
           className="mx-auto mt-9 max-w-2xl text-sm leading-7 text-noir-gray sm:text-base sm:leading-8"
           variants={revealVariants}
         >
-          Ogni dettaglio, dal primo aroma all’ultimo sorso, è pensato per
-          trasformare un cocktail in un ricordo.
+          {t("philosophy.description")}
         </motion.p>
 
         <motion.div

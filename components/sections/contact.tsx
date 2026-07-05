@@ -13,6 +13,7 @@ import { PremiumButton } from "@/components/ui/premium-button";
 import { SectionTitle } from "@/components/ui/section-title";
 import { useReservationModal } from "@/components/providers/reservation-modal-provider";
 import { contactInfo } from "@/lib/data/static-content";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { ReservationForm } from "./reservation-form";
 
 const contactIcons = {
@@ -45,6 +46,7 @@ const itemVariants: Variants = {
 
 export function Contact() {
   const { openReservation } = useReservationModal();
+  const { t } = useTranslation();
   return (
     <section
       className="relative w-full max-w-full overflow-hidden bg-background-primary px-4 py-24 sm:px-6 sm:py-32 lg:px-8"
@@ -68,28 +70,32 @@ export function Contact() {
           <motion.div variants={itemVariants}>
             <SectionTitle
               align="left"
-              description="Prenota il tuo tavolo o contattaci per eventi privati, serate esclusive e richieste speciali."
-              label="Contact Experience"
-              title="Reserve Your Night"
+              description={t("contact.description")}
+              label={t("contact.label")}
+              title={t("contact.title")}
             />
           </motion.div>
 
           <motion.div className="mt-10 grid gap-5" variants={staggerVariants}>
             {contactInfo.details.map(({ icon, label, href }) => {
               const Icon = contactIcons[icon];
+              const localizedLabel =
+                icon === "hours" ? t("contact.hours") : label;
               const content = (
                 <>
                   <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-gold/20 bg-gold/5 text-gold">
                     <Icon aria-hidden="true" size={17} strokeWidth={1.5} />
                   </span>
-                  <span className="text-sm text-noir-gray">{label}</span>
+                  <span className="text-sm text-noir-gray">
+                    {localizedLabel}
+                  </span>
                 </>
               );
 
               return (
                 <motion.div
                   className="flex items-center gap-4"
-                  key={label}
+                  key={localizedLabel}
                   variants={itemVariants}
                 >
                   {href ? (
@@ -118,7 +124,7 @@ export function Contact() {
                 openReservation();
               }}
             >
-              Prenota un Tavolo
+              {t("nav.booking")}
             </PremiumButton>
             <PremiumButton
               className="gap-2"
@@ -128,7 +134,7 @@ export function Contact() {
               variant="secondary"
             >
               <MessageCircle aria-hidden="true" size={17} strokeWidth={1.5} />
-              Scrivici su WhatsApp
+              {t("cta.whatsapp")}
             </PremiumButton>
           </motion.div>
         </motion.div>

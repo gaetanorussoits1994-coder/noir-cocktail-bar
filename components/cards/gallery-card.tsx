@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { cn } from "@/lib/utils";
 
 const aspectRatios = {
@@ -29,9 +30,13 @@ export function GalleryCard({
   delay = 0,
   onClick,
 }: GalleryCardProps) {
+  const { t } = useTranslation();
+
   return (
     <motion.article
-      aria-label={onClick ? `Apri immagine: ${alt}` : undefined}
+      aria-label={
+        onClick ? `${t("gallery.openImage")}: ${alt}` : undefined
+      }
       className={cn(
         "group relative mb-6 min-w-0 break-inside-avoid overflow-hidden rounded-card border border-border bg-card shadow-soft",
         aspectRatios[aspectRatio],

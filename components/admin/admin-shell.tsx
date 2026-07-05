@@ -14,18 +14,21 @@ import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 const navigation = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/bookings", label: "Prenotazioni", icon: Users },
-  { href: "/admin/menu", label: "Menu", icon: Martini },
-  { href: "/admin/events", label: "Eventi", icon: CalendarDays },
-  { href: "/admin/gallery", label: "Gallery", icon: ImageIcon },
-];
+  { href: "/admin", labelKey: "admin.dashboard", icon: LayoutDashboard },
+  { href: "/admin/bookings", labelKey: "admin.bookings", icon: Users },
+  { href: "/admin/menu", labelKey: "admin.menu", icon: Martini },
+  { href: "/admin/events", labelKey: "admin.events", icon: CalendarDays },
+  { href: "/admin/gallery", labelKey: "admin.gallery", icon: ImageIcon },
+] as const;
 
 export function AdminShell({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
   const isLoginPage = pathname === "/admin/login";
@@ -49,7 +52,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
 
     if (!supabase) {
       setConfigurationError(
-        "Configurazione Supabase mancante. Verifica le variabili d'ambiente.",
+        t("admin.configError"),
       );
       setIsLoading(false);
       return;
@@ -109,13 +112,13 @@ export function AdminShell({ children }: { children: ReactNode }) {
       window.removeEventListener("focus", handleWindowFocus);
       subscription.unsubscribe();
     };
-  }, [isLoginPage, router]);
+  }, [isLoginPage, router, t]);
 
   async function handleLogout() {
     const supabase = getSupabaseClient();
 
     if (!supabase) {
-      setLogoutError("Configurazione Supabase non disponibile.");
+      setLogoutError(t("admin.configError"));
       return;
     }
 
@@ -126,7 +129,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
       const { error } = await supabase.auth.signOut();
 
       if (error) {
-        setLogoutError("Logout non riuscito. Riprova.");
+        setLogoutError(t("admin.logoutError"));
         return;
       }
 
@@ -134,7 +137,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
       router.replace("/admin/login");
       router.refresh();
     } catch {
-      setLogoutError("Logout non riuscito. Riprova.");
+      setLogoutError(t("admin.logoutError"));
     } finally {
       setIsLoggingOut(false);
     }
@@ -146,7 +149,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
     return (
       <div className="flex min-h-svh items-center justify-center bg-background-primary px-4 text-noir-gray">
         <span className="mr-3 size-6 animate-spin rounded-full border-2 border-gold/20 border-t-gold" />
-        Verifica sessione...
+        {t("admin.sessionCheck")}
       </div>
     );
   }
@@ -175,13 +178,13 @@ export function AdminShell({ children }: { children: ReactNode }) {
               Noir
             </span>
             <span className="text-[0.6rem] tracking-[0.2em] text-noir-gray uppercase">
-              Administration
+              {t("admin.administration")}
             </span>
           </span>
         </Link>
 
         <nav className="mt-12 grid gap-2">
-          {navigation.map(({ href, label, icon: Icon }) => {
+          {navigation.map(({ href, labelKey, icon: Icon }) => {
             const isActive =
               pathname === href ||
               (href !== "/admin" && pathname.startsWith(`${href}/`));
@@ -198,20 +201,21 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 key={href}
               >
                 <Icon size={17} />
-                {label}
+                {t(labelKey)}
               </Link>
             );
           })}
         </nav>
 
+        <LanguageSwitcher className="mt-auto mb-3 self-start" />
         <button
-          className="mt-auto flex items-center gap-3 rounded-xl border border-white/10 px-4 py-3 text-sm text-noir-gray transition hover:border-gold/30 hover:text-gold-light"
+          className="flex items-center gap-3 rounded-xl border border-white/10 px-4 py-3 text-sm text-noir-gray transition hover:border-gold/30 hover:text-gold-light"
           disabled={isLoggingOut}
           onClick={handleLogout}
           type="button"
         >
           <LogOut size={17} />
-          {isLoggingOut ? "Uscita..." : "Logout"}
+          {isLoggingOut ? t("admin.exiting") : t("admin.logout")}
         </button>
       </aside>
 
@@ -223,15 +227,18 @@ export function AdminShell({ children }: { children: ReactNode }) {
           <p className="hidden text-xs tracking-[0.18em] text-noir-gray uppercase lg:block">
             Noir Cocktail Bar
           </p>
-          <button
-            className="inline-flex items-center gap-2 text-xs font-semibold text-noir-gray transition hover:text-gold-light lg:hidden"
-            disabled={isLoggingOut}
-            onClick={handleLogout}
-            type="button"
-          >
-            <LogOut size={15} />
-            {isLoggingOut ? "Uscita..." : "Esci"}
-          </button>
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher />
+            <button
+              className="inline-flex items-center gap-2 text-xs font-semibold text-noir-gray transition hover:text-gold-light lg:hidden"
+              disabled={isLoggingOut}
+              onClick={handleLogout}
+              type="button"
+            >
+              <LogOut size={15} />
+              {isLoggingOut ? t("admin.exiting") : t("admin.exit")}
+            </button>
+          </div>
         </div>
 
         {logoutError && (
@@ -241,7 +248,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
         )}
 
         <nav className="mx-auto mt-4 flex max-w-7xl gap-2 overflow-x-auto pb-1 lg:hidden">
-          {navigation.map(({ href, label }) => (
+          {navigation.map(({ href, labelKey }) => (
             <Link
               className={cn(
                 "shrink-0 rounded-full border px-3 py-1.5 text-xs",
@@ -252,7 +259,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
               href={href}
               key={href}
             >
-              {label}
+              {t(labelKey)}
             </Link>
           ))}
         </nav>

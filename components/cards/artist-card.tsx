@@ -3,6 +3,7 @@
 import { motion, type Variants } from "framer-motion";
 import { AtSign } from "lucide-react";
 import Image from "next/image";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 const cardVariants: Variants = {
   hidden: { opacity: 0, y: 36 },
@@ -35,6 +36,8 @@ export function ArtistCard({
   instagramHandle,
   instagramHref,
 }: ArtistCardProps) {
+  const { locale, t } = useTranslation();
+
   return (
     <motion.article
       className="group relative min-w-0 aspect-[3/4] overflow-hidden rounded-card border border-border bg-card shadow-soft"
@@ -47,7 +50,11 @@ export function ArtistCard({
       }}
     >
       <Image
-        alt={`${name}, ${role} del Noir Cocktail Bar`}
+        alt={
+          locale === "en"
+            ? `${name}, ${role} at Noir Cocktail Bar`
+            : `${name}, ${role} del Noir Cocktail Bar`
+        }
         className="object-cover transition-transform duration-700 group-hover:scale-105"
         fill
         sizes="(max-width: 767px) 100vw, 33vw"
@@ -79,7 +86,7 @@ export function ArtistCard({
         </p>
 
         <a
-          aria-label={`Instagram di ${name}`}
+          aria-label={`${t("artists.instagram")} ${name}`}
           className="mt-5 inline-flex max-w-full min-w-0 items-center gap-2 break-all text-xs font-medium text-gold-light opacity-70 transition-[opacity,transform] duration-300 lg:translate-y-2 lg:opacity-0 lg:group-hover:translate-y-0 lg:group-hover:opacity-100"
           href={instagramHref}
           rel="noreferrer"

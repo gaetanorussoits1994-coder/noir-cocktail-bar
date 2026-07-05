@@ -9,30 +9,7 @@ import {
   TimelineItem,
   type TimelineItemProps,
 } from "@/components/ui/timeline-item";
-
-const timeline: TimelineItemProps[] = [
-  {
-    number: "01",
-    title: "Selection",
-    description: "Ingredienti ricercati e spirits premium.",
-  },
-  {
-    number: "02",
-    title: "Creation",
-    description: "Tecniche moderne e miscelazione d’autore.",
-  },
-  {
-    number: "03",
-    title: "Experience",
-    description: "Atmosfera, musica e servizio curati in ogni dettaglio.",
-  },
-];
-
-const stats: StatCardProps[] = [
-  { value: "40+", label: "Signature Drinks" },
-  { value: "12", label: "Eventi Mensili" },
-  { value: "5", label: "Anni di Esperienza" },
-];
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 const revealVariants: Variants = {
   hidden: { opacity: 0, y: 28 },
@@ -56,6 +33,30 @@ const staggerVariants: Variants = {
 };
 
 export function OurStory() {
+  const { t } = useTranslation();
+  const timeline: TimelineItemProps[] = [
+    {
+      number: "01",
+      title: "Selection",
+      description: t("story.timeline.selection"),
+    },
+    {
+      number: "02",
+      title: "Creation",
+      description: t("story.timeline.creation"),
+    },
+    {
+      number: "03",
+      title: "Experience",
+      description: t("story.timeline.experience"),
+    },
+  ];
+  const stats: StatCardProps[] = [
+    { value: "40+", label: "Signature Drinks" },
+    { value: "12", label: t("story.stats.events") },
+    { value: "5", label: t("story.stats.years") },
+  ];
+
   return (
     <section
       className="relative w-full max-w-full overflow-hidden bg-background-secondary px-4 py-24 sm:px-6 sm:py-32 lg:px-8"
@@ -81,8 +82,8 @@ export function OurStory() {
             <motion.div variants={revealVariants}>
               <SectionTitle
                 align="left"
-                label="Our Story"
-                title="A Night Written in Gold"
+                label={t("story.label")}
+                title={t("story.title")}
               />
             </motion.div>
 
@@ -90,10 +91,7 @@ export function OurStory() {
               className="mt-7 max-w-xl text-sm leading-7 text-noir-gray sm:text-base sm:leading-8"
               variants={revealVariants}
             >
-              Noir nasce dall’idea di trasformare ogni serata in un’esperienza
-              sensoriale. Luci soffuse, cocktail ricercati, musica selezionata e
-              un’estetica elegante definiscono un luogo pensato per chi cerca
-              più di un semplice drink.
+              {t("story.description")}
             </motion.p>
 
             <motion.ol className="mt-10" variants={staggerVariants}>
@@ -115,7 +113,7 @@ export function OurStory() {
             whileInView={{ opacity: 1, y: 0 }}
           >
             <Image
-              alt="Gli interni eleganti del Noir Cocktail Bar"
+              alt={t("story.imageAlt")}
               className="object-cover"
               fill
               sizes="(max-width: 1023px) 100vw, 55vw"

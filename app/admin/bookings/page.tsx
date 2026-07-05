@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, MessageCircle, Trash2, X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   AdminEmpty,
@@ -12,6 +12,7 @@ import {
   panelClass,
   secondaryButtonClass,
 } from "@/components/admin/admin-ui";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { getSupabaseClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +29,33 @@ type AdminReservationRow = {
   created_at: string;
 };
 
+const bookingCopy = {
+  it: {
+    confirm: "Conferma", reject: "Rifiuta", delete: "Elimina prenotazione",
+    deleteConfirm: "Eliminare definitivamente questa prenotazione?",
+    description: "Gestisci richieste, stati e dettagli delle prenotazioni tavoli.",
+    title: "Prenotazioni", auto: "Aggiornamento automatico attivo",
+    last: "Ultimo aggiornamento", loading: "Caricamento prenotazioni...",
+    empty: "Nessuna prenotazione presente.", date: "Data", time: "Ora",
+    guests: "Ospiti", created: "Creata", customer: "Cliente",
+    contacts: "Contatti", dateTime: "Data / Ora", status: "Stato",
+    notes: "Note", createdAt: "Creata il", actions: "Azioni",
+    statuses: { pending: "In attesa", confirmed: "Confermata", rejected: "Rifiutata", cancelled: "Annullata" },
+  },
+  en: {
+    confirm: "Confirm", reject: "Reject", delete: "Delete booking",
+    deleteConfirm: "Permanently delete this booking?",
+    description: "Manage table requests, statuses and booking details.",
+    title: "Bookings", auto: "Automatic updates active",
+    last: "Last updated", loading: "Loading bookings...",
+    empty: "No bookings found.", date: "Date", time: "Time",
+    guests: "Guests", created: "Created", customer: "Guest",
+    contacts: "Contact details", dateTime: "Date / Time", status: "Status",
+    notes: "Notes", createdAt: "Submitted at", actions: "Actions",
+    statuses: { pending: "Pending", confirmed: "Confirmed", rejected: "Rejected", cancelled: "Cancelled" },
+  },
+} as const;
+
 const dateFormatter = new Intl.DateTimeFormat("it-IT", {
   day: "2-digit",
   month: "2-digit",
@@ -40,6 +68,12 @@ const dateTimeFormatter = new Intl.DateTimeFormat("it-IT", {
   year: "numeric",
   hour: "2-digit",
   minute: "2-digit",
+});
+
+const timeFormatter = new Intl.DateTimeFormat("it-IT", {
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
 });
 
 const statusStyles: Record<AdminReservationRow["status"], string> = {
@@ -67,12 +101,19 @@ function getWhatsAppHref(booking: AdminReservationRow) {
 }
 
 export default function AdminBookingsPage() {
+  const { locale } = useTranslation();
+  const labels = bookingCopy[locale];
   const [bookings, setBookings] = useState<AdminReservationRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeId, setActiveId] = useState("");
   const [error, setError] = useState("");
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
+  const activeIdRef = useRef("");
+  const isFetchingRef = useRef(false);
 
   const loadBookings = useCallback(async () => {
+    if (isFetchingRef.current) return;
+
     const supabase = getSupabaseClient();
 
     if (!supabase) {
@@ -80,6 +121,8 @@ export default function AdminBookingsPage() {
       setIsLoading(false);
       return;
     }
+
+    isFetchingRef.current = true;
 
     const { data, error: queryError } = await supabase
       .from("reservations")
@@ -102,25 +145,34 @@ export default function AdminBookingsPage() {
       }
       setBookings((data ?? []) as AdminReservationRow[]);
       setError("");
+      setLastUpdatedAt(new Date());
     }
 
     setIsLoading(false);
+    isFetchingRef.current = false;
   }, []);
 
   useEffect(() => {
     void loadBookings();
 
     const supabase = getSupabaseClient();
+    const refreshIfIdle = () => {
+      if (!activeIdRef.current && !isFetchingRef.current) {
+        void loadBookings();
+      }
+    };
+    const pollingInterval = window.setInterval(refreshIfIdle, 10_000);
     const channel = supabase
       ?.channel("admin-reservations")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "reservations" },
-        () => void loadBookings(),
+        refreshIfIdle,
       )
       .subscribe();
 
     return () => {
+      window.clearInterval(pollingInterval);
       if (supabase && channel) void supabase.removeChannel(channel);
     };
   }, [loadBookings]);
@@ -132,6 +184,7 @@ export default function AdminBookingsPage() {
     const supabase = getSupabaseClient();
     if (!supabase) return;
 
+    activeIdRef.current = id;
     setActiveId(id);
     setError("");
 
@@ -148,19 +201,22 @@ export default function AdminBookingsPage() {
           booking.id === id ? { ...booking, status } : booking,
         ),
       );
+      await loadBookings();
     }
 
+    activeIdRef.current = "";
     setActiveId("");
   }
 
   async function deleteBooking(id: string) {
-    if (!window.confirm("Eliminare definitivamente questa prenotazione?")) {
+    if (!window.confirm(labels.deleteConfirm)) {
       return;
     }
 
     const supabase = getSupabaseClient();
     if (!supabase) return;
 
+    activeIdRef.current = id;
     setActiveId(id);
     const { error: deleteError } = await supabase
       .from("reservations")
@@ -173,8 +229,10 @@ export default function AdminBookingsPage() {
       setBookings((current) =>
         current.filter((booking) => booking.id !== id),
       );
+      await loadBookings();
     }
 
+    activeIdRef.current = "";
     setActiveId("");
   }
 
@@ -190,7 +248,7 @@ export default function AdminBookingsPage() {
           type="button"
         >
           <Check size={14} />
-          Conferma
+          {labels.confirm}
         </button>
         <button
           className={cn(dangerButtonClass, "text-amber-100")}
@@ -199,7 +257,7 @@ export default function AdminBookingsPage() {
           type="button"
         >
           <X size={14} />
-          Rifiuta
+          {labels.reject}
         </button>
         {(booking.status === "confirmed" ||
           booking.status === "rejected") && (
@@ -217,7 +275,7 @@ export default function AdminBookingsPage() {
           </a>
         )}
         <button
-          aria-label="Elimina prenotazione"
+          aria-label={labels.delete}
           className={dangerButtonClass}
           disabled={isBusy}
           onClick={() => deleteBooking(booking.id)}
@@ -232,17 +290,32 @@ export default function AdminBookingsPage() {
   return (
     <div className="grid gap-8">
       <AdminPageHeader
-        description="Gestisci richieste, stati e dettagli delle prenotazioni tavoli."
+        description={labels.description}
         eyebrow="Guest management"
-        title="Prenotazioni"
+        title={labels.title}
       />
+
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-noir-gray">
+        <span className="inline-flex items-center gap-2 text-emerald-200">
+          <span
+            aria-hidden="true"
+            className="size-1.5 rounded-full bg-emerald-300 shadow-[0_0_10px_rgba(110,231,183,0.75)]"
+          />
+          {labels.auto}
+        </span>
+        {lastUpdatedAt && (
+          <span>
+            {labels.last}: {timeFormatter.format(lastUpdatedAt)}
+          </span>
+        )}
+      </div>
 
       {error && <AdminError message={error} />}
 
       {isLoading ? (
-        <AdminLoading label="Caricamento prenotazioni..." />
+        <AdminLoading label={labels.loading} />
       ) : bookings.length === 0 ? (
-        <AdminEmpty message="Nessuna prenotazione presente." />
+        <AdminEmpty message={labels.empty} />
       ) : (
         <>
           <div className="grid gap-4 md:hidden">
@@ -268,29 +341,29 @@ export default function AdminBookingsPage() {
                       statusStyles[booking.status],
                     )}
                   >
-                    {booking.status}
+                    {labels.statuses[booking.status]}
                   </span>
                 </div>
 
                 <dl className="mt-5 grid grid-cols-2 gap-4 border-y border-white/10 py-4 text-sm">
                   <div>
-                    <dt className="text-xs text-noir-gray">Data</dt>
+                    <dt className="text-xs text-noir-gray">{labels.date}</dt>
                     <dd className="mt-1">
                       {formatDate(booking.reservation_date)}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-xs text-noir-gray">Ora</dt>
+                    <dt className="text-xs text-noir-gray">{labels.time}</dt>
                     <dd className="mt-1">
                       {booking.reservation_time.slice(0, 5)}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-xs text-noir-gray">Ospiti</dt>
+                    <dt className="text-xs text-noir-gray">{labels.guests}</dt>
                     <dd className="mt-1">{booking.guests}</dd>
                   </div>
                   <div>
-                    <dt className="text-xs text-noir-gray">Creata</dt>
+                    <dt className="text-xs text-noir-gray">{labels.created}</dt>
                     <dd className="mt-1">
                       {dateTimeFormatter.format(new Date(booking.created_at))}
                     </dd>
@@ -317,14 +390,14 @@ export default function AdminBookingsPage() {
               <table className="w-full min-w-[75rem] text-left text-sm">
                 <thead className="border-b border-white/10 bg-black/20 text-[0.65rem] tracking-[0.12em] text-gold uppercase">
                   <tr>
-                    <th className="px-5 py-4">Cliente</th>
-                    <th className="px-5 py-4">Contatti</th>
-                    <th className="px-5 py-4">Ospiti</th>
-                    <th className="px-5 py-4">Data / Ora</th>
-                    <th className="px-5 py-4">Stato</th>
-                    <th className="px-5 py-4">Note</th>
-                    <th className="px-5 py-4">Creata il</th>
-                    <th className="px-5 py-4">Azioni</th>
+                    <th className="px-5 py-4">{labels.customer}</th>
+                    <th className="px-5 py-4">{labels.contacts}</th>
+                    <th className="px-5 py-4">{labels.guests}</th>
+                    <th className="px-5 py-4">{labels.dateTime}</th>
+                    <th className="px-5 py-4">{labels.status}</th>
+                    <th className="px-5 py-4">{labels.notes}</th>
+                    <th className="px-5 py-4">{labels.createdAt}</th>
+                    <th className="px-5 py-4">{labels.actions}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -358,7 +431,7 @@ export default function AdminBookingsPage() {
                             statusStyles[booking.status],
                           )}
                         >
-                          {booking.status}
+                          {labels.statuses[booking.status]}
                         </span>
                       </td>
                       <td className="max-w-56 px-5 py-4 text-noir-gray">

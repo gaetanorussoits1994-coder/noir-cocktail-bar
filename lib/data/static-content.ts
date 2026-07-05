@@ -70,8 +70,9 @@ export const fallbackMenu = [
         id: "fallback-noir-negroni",
         name: "Noir Negroni",
         description:
-          "Un classico intenso reinterpretato con note agrumate e una profondità vellutata.",
-        ingredients: "",
+          "Gin al cacao, bitter italiano e vermouth rosso costruiscono un Negroni scuro e avvolgente. La scorza d'arancia porta freschezza a un finale lungo e amaricante.",
+        ingredients:
+          "Gin al cacao, bitter italiano, vermouth rosso, scorza d'arancia",
         price: 18,
         imageUrl: "/images/noir-negroni.png",
         tags: ["Signature"],
@@ -82,8 +83,9 @@ export const fallbackMenu = [
         id: "fallback-golden-smoke",
         name: "Golden Smoke",
         description:
-          "Bourbon, sfumature affumicate e accenti aromatici in un equilibrio caldo e avvolgente.",
-        ingredients: "",
+          "Bourbon, miele speziato e una lieve affumicatura definiscono un cocktail caldo e strutturato. Il limone mantiene il sorso teso e bilancia la parte morbida.",
+        ingredients:
+          "Bourbon, miele speziato, limone, bitter aromatico, affumicatura di legno",
         price: 20,
         imageUrl: "/images/golden-smoke.png",
         tags: ["Signature"],
@@ -94,8 +96,9 @@ export const fallbackMenu = [
         id: "fallback-velvet-night",
         name: "Velvet Night",
         description:
-          "Frutti scuri e delicate note floreali per un cocktail morbido, elegante e notturno.",
-        ingredients: "",
+          "Vodka, mora e violetta compongono un profilo floreale e fruttato senza eccessi. Il limone aggiunge precisione a una texture morbida e setosa.",
+        ingredients:
+          "Vodka, liquore alla violetta, mora, limone, aquafaba",
         price: 17,
         imageUrl: "/images/velvet-night.png",
         tags: ["Signature"],
@@ -161,6 +164,64 @@ export const fallbackMenu = [
         tags: [],
         isFeatured: false,
         sortOrder: 1,
+      },
+    ],
+  },
+  {
+    id: "fallback-amari",
+    name: "Amari",
+    slug: "amari",
+    description:
+      "Una selezione italiana di amari da meditazione e fine pasto.",
+    sortOrder: 15,
+    items: [
+      {
+        id: "fallback-amaro-montenegro",
+        name: "Amaro Montenegro",
+        description:
+          "Amaro italiano morbido e aromatico, con note di arancia, spezie dolci ed erbe officinali. Il finale è equilibrato e delicatamente amaricante.",
+        ingredients: "Infuso di erbe aromatiche, spezie e scorze di agrumi",
+        price: 7,
+        imageUrl: null,
+        tags: ["Amaro", "Italiano"],
+        isFeatured: false,
+        sortOrder: 1,
+      },
+      {
+        id: "fallback-amaro-averna",
+        name: "Amaro Averna",
+        description:
+          "Amaro siciliano dal corpo pieno, attraversato da caramello, agrumi ed erbe mediterranee. La chiusura è lunga, rotonda e piacevolmente amara.",
+        ingredients: "Erbe, radici, scorze di agrumi e caramello",
+        price: 7,
+        imageUrl: null,
+        tags: ["Amaro", "Siciliano"],
+        isFeatured: false,
+        sortOrder: 2,
+      },
+      {
+        id: "fallback-fernet-branca",
+        name: "Fernet-Branca",
+        description:
+          "Fernet intenso e balsamico, con una trama netta di erbe, spezie e radici. Il profilo asciutto e persistente lo rende ideale come digestivo.",
+        ingredients: "Erbe aromatiche, spezie e radici",
+        price: 7,
+        imageUrl: null,
+        tags: ["Fernet", "Balsamico"],
+        isFeatured: false,
+        sortOrder: 3,
+      },
+      {
+        id: "fallback-amaro-del-capo",
+        name: "Vecchio Amaro del Capo",
+        description:
+          "Amaro calabrese aromatico e fresco, caratterizzato da erbe, fiori e agrumi del territorio. Servito freddo esprime un finale pulito e fragrante.",
+        ingredients: "Erbe, fiori e scorze di agrumi calabresi",
+        price: 6,
+        imageUrl: null,
+        tags: ["Amaro", "Calabrese"],
+        isFeatured: false,
+        sortOrder: 4,
       },
     ],
   },
@@ -281,7 +342,8 @@ export const footerLinks = {
     { label: "Facebook", href: "https://www.facebook.com/" },
   ] satisfies ContentLink[],
   legal: [
-    { label: "Privacy Policy", href: "#privacy" },
-    { label: "Cookie Policy", href: "#cookie" },
+    { label: "Privacy Policy", href: "/privacy-policy" },
+    { label: "Cookie Policy", href: "/cookie-policy" },
+    { label: "Termini di utilizzo", href: "/terms" },
   ] satisfies ContentLink[],
 };

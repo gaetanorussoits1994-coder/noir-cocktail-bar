@@ -8,18 +8,35 @@ import {
   getDisplayTags,
   getMenuAllergens,
 } from "@/lib/menu-allergens";
+import {
+  localizeAllergen,
+  localizeMenuCategory,
+  localizeMenuItem,
+  localizeMenuTag,
+} from "@/lib/i18n/menu-content";
+import { getMenuItemSlug } from "@/lib/menu-items";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { cn } from "@/lib/utils";
 
 export type PublicCocktail = {
   id: string;
   name: string;
-  slug: string;
+  slug: string | null;
   category: string;
   description: string | null;
   price: number | null;
   image_url?: string | null;
   ingredients: string | null;
   alcohol_level: string | null;
+  story?: string | null;
+  glassware?: string | null;
+  garnish?: string | null;
+  preparation_technique?: string | null;
+  staff_recommendation?: string | null;
+  pairing?: string | null;
+  product_style?: string | null;
+  serving_format?: string | null;
+  serving_temperature?: string | null;
   tags: string[];
   is_featured: boolean;
   is_available: boolean;
@@ -38,10 +55,14 @@ const badgeIcons: Array<{
   { matches: ["mezcal"], icon: "🔥", label: "Mezcal" },
 ];
 
-export function formatCocktailPrice(price: number | null) {
-  if (price === null) return "Su richiesta";
+export function formatCocktailPrice(
+  price: number | null,
+  locale: "it" | "en" = "it",
+  onRequest = "Su richiesta",
+) {
+  if (price === null) return onRequest;
 
-  return new Intl.NumberFormat("it-IT", {
+  return new Intl.NumberFormat(locale === "en" ? "en-IE" : "it-IT", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 0,
@@ -100,8 +121,11 @@ type MenuCocktailCardProps = {
 };
 
 export function MenuCocktailCard({ cocktail }: MenuCocktailCardProps) {
+  const { locale, t } = useTranslation();
   const displayTags = getDisplayTags(cocktail.tags);
   const allergens = getMenuAllergens(cocktail);
+  const cocktailSlug = getMenuItemSlug(cocktail);
+  const localizedItem = localizeMenuItem(cocktail, locale);
 
   return (
     <motion.article
@@ -113,9 +137,9 @@ export function MenuCocktailCard({ cocktail }: MenuCocktailCardProps) {
       whileInView={{ opacity: 1, y: 0 }}
     >
       <Link
-        aria-label={`Scopri il cocktail ${cocktail.name}`}
+        aria-label={`${t("menu.discoverProduct")} ${cocktail.name}`}
         className="flex h-full flex-col focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-gold"
-        href={`/cocktails/${encodeURIComponent(cocktail.slug)}`}
+        href={`/cocktails/${encodeURIComponent(cocktailSlug)}`}
       >
         <div
           aria-hidden="true"
@@ -123,7 +147,7 @@ export function MenuCocktailCard({ cocktail }: MenuCocktailCardProps) {
         />
         <div className="flex flex-1 flex-col p-6 sm:p-8">
           <p className="text-[0.62rem] font-semibold tracking-[0.18em] text-gold uppercase">
-            {cocktail.category}
+            {localizeMenuCategory(cocktail.category, locale)}
           </p>
           <div className="flex min-w-0 items-start justify-between gap-5">
             <div className="flex min-w-0 items-center gap-2">
@@ -140,31 +164,38 @@ export function MenuCocktailCard({ cocktail }: MenuCocktailCardProps) {
               )}
             </div>
             <span className="shrink-0 pt-1 text-sm font-semibold text-gold">
-              {formatCocktailPrice(cocktail.price)}
+              {formatCocktailPrice(
+                cocktail.price,
+                locale,
+                t("menu.onRequest"),
+              )}
             </span>
           </div>
 
-          {cocktail.description && (
+          {localizedItem.description && (
             <p className="mt-4 text-sm leading-7 text-noir-gray">
-              {cocktail.description}
+              {localizedItem.description}
             </p>
           )}
 
-          {cocktail.ingredients && (
+          {localizedItem.ingredients && (
             <p className="mt-3 text-xs leading-6 text-noir-gray">
               <span className="font-semibold tracking-[0.08em] text-gold uppercase">
-                Ingredienti:
+                {t("menu.ingredients")}:
               </span>{" "}
-              {cocktail.ingredients}
+              {localizedItem.ingredients}
             </p>
           )}
 
-          <CocktailBadges className="mt-5" tags={displayTags} />
+          <CocktailBadges
+            className="mt-5"
+            tags={displayTags.map((tag) => localizeMenuTag(tag, locale))}
+          />
 
           {allergens.length > 0 && (
             <div className="mt-5 border-t border-border pt-4">
               <p className="text-[0.6rem] font-semibold tracking-[0.14em] text-gold uppercase">
-                Allergeni
+                {t("menu.allergens")}
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {allergens.map((allergen) => (
@@ -173,7 +204,7 @@ export function MenuCocktailCard({ cocktail }: MenuCocktailCardProps) {
                     key={allergen.label}
                   >
                     <span aria-hidden="true">{allergen.icon}</span>{" "}
-                    {allergen.label}
+                    {localizeAllergen(allergen.label, locale)}
                   </span>
                 ))}
               </div>
@@ -181,7 +212,7 @@ export function MenuCocktailCard({ cocktail }: MenuCocktailCardProps) {
           )}
 
           <span className="mt-auto pt-6 text-xs font-semibold tracking-[0.12em] text-gold uppercase">
-            Scopri il cocktail →
+            {t("menu.discoverProduct")} →
           </span>
         </div>
       </Link>

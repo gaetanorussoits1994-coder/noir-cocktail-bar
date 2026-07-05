@@ -6,21 +6,24 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { PremiumButton } from "@/components/ui/premium-button";
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useReservationModal } from "@/components/providers/reservation-modal-provider";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { cn } from "@/lib/utils";
 
 const navigation = [
-  { label: "Home", href: "/#home" },
-  { label: "Menu", href: "/menu" },
-  { label: "Experience", href: "/#experience" },
-  { label: "Eventi", href: "/#events" },
-  { label: "Gallery", href: "/#gallery" },
-  { label: "La nostra storia", href: "/about" },
-  { label: "Contatti", href: "/#contact" },
+  { label: "nav.home" as const, href: "/#home" },
+  { label: "nav.menu" as const, href: "/menu" },
+  { label: "nav.experience" as const, href: "/#experience" },
+  { label: "nav.events" as const, href: "/#events" },
+  { label: "nav.gallery" as const, href: "/#gallery" },
+  { label: "nav.story" as const, href: "/about" },
+  { label: "nav.contact" as const, href: "/#contact" },
 ];
 
 export function Navbar() {
   const { openReservation } = useReservationModal();
+  const { t } = useTranslation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -63,7 +66,7 @@ export function Navbar() {
         )}
       >
         <nav
-          aria-label="Navigazione principale"
+          aria-label={t("a11y.mainNavigation")}
           className="mx-auto flex h-20 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8"
         >
           <Link
@@ -73,33 +76,36 @@ export function Navbar() {
             Noir
           </Link>
 
-          <div className="hidden items-center gap-8 lg:flex">
+          <div className="hidden items-center gap-5 lg:flex xl:gap-7">
             {navigation.map((item) => (
               <Link
                 className="text-xs font-medium tracking-[0.12em] text-noir-gray uppercase transition-colors duration-300 hover:text-gold-light"
                 href={item.href}
                 key={item.href}
               >
-                {item.label}
+                {t(item.label)}
               </Link>
             ))}
           </div>
 
-          <PremiumButton
-            className="hidden rounded-card border border-gold bg-gold px-5 py-2.5 text-xs font-semibold tracking-[0.08em] text-background-primary uppercase shadow-gold transition-colors duration-300 hover:bg-gold-light lg:inline-flex"
-            href="/#booking"
-            onClick={(event) => {
-              event.preventDefault();
-              openReservation();
-            }}
-          >
-            Prenota un Tavolo
-          </PremiumButton>
+          <div className="hidden items-center gap-3 lg:flex">
+            <LanguageSwitcher />
+            <PremiumButton
+              className="rounded-card border border-gold bg-gold px-4 py-2.5 text-xs font-semibold tracking-[0.08em] text-background-primary uppercase shadow-gold transition-colors duration-300 hover:bg-gold-light xl:px-5"
+              href="/#booking"
+              onClick={(event) => {
+                event.preventDefault();
+                openReservation();
+              }}
+            >
+              {t("nav.booking")}
+            </PremiumButton>
+          </div>
 
           <button
             aria-controls="mobile-navigation"
             aria-expanded={isMenuOpen}
-            aria-label="Apri il menu"
+            aria-label={t("a11y.openMenu")}
             className="inline-flex size-11 items-center justify-center rounded-full border border-border bg-card text-noir-white lg:hidden"
             onClick={() => setIsMenuOpen(true)}
             type="button"
@@ -114,7 +120,7 @@ export function Navbar() {
           <>
             <motion.button
               animate={{ opacity: 1 }}
-              aria-label="Chiudi il menu"
+              aria-label={t("a11y.closeMenu")}
               className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm lg:hidden"
               exit={{ opacity: 0 }}
               initial={{ opacity: 0 }}
@@ -138,14 +144,17 @@ export function Navbar() {
                 >
                   Noir
                 </Link>
-                <button
-                  aria-label="Chiudi il menu"
-                  className="inline-flex size-11 items-center justify-center rounded-full border border-border bg-card text-noir-white"
-                  onClick={closeMenu}
-                  type="button"
-                >
-                  <X aria-hidden="true" size={21} strokeWidth={1.5} />
-                </button>
+                <div className="flex items-center gap-3">
+                  <LanguageSwitcher />
+                  <button
+                    aria-label={t("a11y.closeMenu")}
+                    className="inline-flex size-11 items-center justify-center rounded-full border border-border bg-card text-noir-white"
+                    onClick={closeMenu}
+                    type="button"
+                  >
+                    <X aria-hidden="true" size={21} strokeWidth={1.5} />
+                  </button>
+                </div>
               </div>
 
               <div className="mt-16 flex flex-col">
@@ -156,7 +165,7 @@ export function Navbar() {
                     key={item.href}
                     onClick={closeMenu}
                   >
-                    {item.label}
+                    {t(item.label)}
                   </Link>
                 ))}
               </div>
@@ -170,7 +179,7 @@ export function Navbar() {
                   openReservation();
                 }}
               >
-                Prenota un Tavolo
+                {t("nav.booking")}
               </PremiumButton>
             </motion.aside>
           </>
