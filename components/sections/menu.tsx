@@ -7,7 +7,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { PremiumButton } from "@/components/ui/premium-button";
 import { SectionTitle } from "@/components/ui/section-title";
-import { fallbackMenu } from "@/lib/data/static-content";
+import {
+  fallbackMenu,
+  type PublicMenuItem as StaticPublicMenuItem,
+} from "@/lib/data/static-content";
 import {
   getDisplayTags,
   getMenuAllergens,
@@ -62,7 +65,7 @@ type PublicMenuCategory = {
 };
 
 const fallbackCocktails: PublicCocktail[] = fallbackMenu.flatMap((category) =>
-  category.items.map((item) => ({
+  category.items.map((item: StaticPublicMenuItem) => ({
     id: item.id,
     category_id: category.id,
     name: item.name,
@@ -71,7 +74,11 @@ const fallbackCocktails: PublicCocktail[] = fallbackMenu.flatMap((category) =>
     description: item.description || null,
     price: item.price,
     ingredients: item.ingredients || null,
-    alcohol_level: null,
+    alcohol_level: item.alcoholLevel || null,
+    story: item.story || null,
+    product_style: item.productStyle || null,
+    serving_format: item.servingFormat || null,
+    serving_temperature: item.servingTemperature || null,
     tags: item.tags,
     is_featured: item.isFeatured,
     is_available: true,
@@ -107,7 +114,7 @@ const categoryIntroductions: Record<string, string> = {
   Birre:
     "Lager, stout e weiss tra grandi classici italiani e internazionali.",
   "Alcolici Premium":
-    "Distillati selezionati per degustazioni pulite e cocktail essenziali dal carattere elegante.",
+    "Selezione di bottiglie premium servite al tavolo, pensate per degustazioni esclusive, serate private e momenti da condividere.",
   "Cocktail Analcolici":
     "Miscelazioni alcohol free costruite con succhi, botaniche e mixer di qualità.",
   "Soft Drinks":

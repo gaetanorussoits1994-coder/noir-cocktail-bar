@@ -24,10 +24,44 @@ import {
   isMenuItemSlug,
   slugifyMenuValue,
 } from "@/lib/menu-items";
-import { fallbackMenu } from "@/lib/data/static-content";
+import {
+  fallbackMenu,
+  type PublicMenuItem as StaticPublicMenuItem,
+} from "@/lib/data/static-content";
+import {
+  localizeAllergen,
+  localizeMenuCategory,
+  localizeMenuItem,
+  localizeMenuServiceValue,
+  localizeMenuTag,
+} from "@/lib/i18n/menu-content";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { getSupabaseClient } from "@/lib/supabase";
 
 type DetailStatus = "loading" | "ready" | "not-found";
+
+const detailCopy = {
+  it: {
+    loading: "Caricamento prodotto", notFound: "Prodotto non trovato",
+    notFoundDescription: "Questa selezione non è disponibile oppure il menu è in fase di aggiornamento.",
+    back: "Torna al menu", product: "Il prodotto", identity: "Identità e carattere",
+    story: "Storia e origine", style: "Stile", alcohol: "Gradazione",
+    glassware: "Bicchiere consigliato", technique: "Tecnica", format: "Formato",
+    temperature: "Temperatura di servizio", tasting: "Note degustative",
+    staff: "Il consiglio dello staff", pairing: "Abbinamento consigliato",
+    relatedEyebrow: "Continua l'esperienza", related: "Prodotti correlati",
+  },
+  en: {
+    loading: "Loading product", notFound: "Product not found",
+    notFoundDescription: "This selection is unavailable or the menu is currently being updated.",
+    back: "Back to menu", product: "The product", identity: "Identity and character",
+    story: "Story and origin", style: "Style", alcohol: "Alcohol level",
+    glassware: "Recommended glassware", technique: "Technique", format: "Format",
+    temperature: "Serving temperature", tasting: "Tasting notes",
+    staff: "Staff recommendation", pairing: "Recommended pairing",
+    relatedEyebrow: "Continue the experience", related: "Related products",
+  },
+} as const;
 
 function logCocktailError(error: unknown) {
   const supabaseError = (error ?? {}) as {
@@ -49,7 +83,7 @@ function logCocktailError(error: unknown) {
 }
 
 const fallbackCocktails: PublicCocktail[] = fallbackMenu.flatMap((category) =>
-  category.items.map((item) => ({
+  category.items.map((item: StaticPublicMenuItem) => ({
     id: item.id,
     name: item.name,
     slug: slugifyMenuValue(item.name),
@@ -58,7 +92,11 @@ const fallbackCocktails: PublicCocktail[] = fallbackMenu.flatMap((category) =>
     price: item.price,
     image_url: item.imageUrl,
     ingredients: item.ingredients || null,
-    alcohol_level: null,
+    alcohol_level: item.alcoholLevel || null,
+    story: item.story || null,
+    product_style: item.productStyle || null,
+    serving_format: item.servingFormat || null,
+    serving_temperature: item.servingTemperature || null,
     tags: item.tags,
     is_featured: item.isFeatured,
     is_available: true,
@@ -69,6 +107,8 @@ const fallbackCocktails: PublicCocktail[] = fallbackMenu.flatMap((category) =>
 export default function CocktailDetailPage() {
   const params = useParams<{ slug: string }>();
   const { openReservation } = useReservationModal();
+  const { locale, t } = useTranslation();
+  const copy = detailCopy[locale];
   const [cocktail, setCocktail] = useState<PublicCocktail | null>(null);
   const [relatedCocktails, setRelatedCocktails] = useState<
     PublicCocktail[]
@@ -155,7 +195,7 @@ export default function CocktailDetailPage() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background-primary px-4">
         <div
-          aria-label="Caricamento cocktail"
+          aria-label={copy.loading}
           className="size-10 animate-spin rounded-full border-2 border-gold/20 border-t-gold"
           role="status"
         />
@@ -172,18 +212,17 @@ export default function CocktailDetailPage() {
               <Martini aria-hidden="true" size={26} />
             </span>
             <h1 className="mt-6 font-display text-5xl text-gold-light">
-              Prodotto non trovato
+              {copy.notFound}
             </h1>
             <p className="mx-auto mt-4 max-w-lg text-sm leading-7 text-noir-gray">
-              Questa creazione non è disponibile oppure il menu è in fase di
-              aggiornamento.
+              {copy.notFoundDescription}
             </p>
             <Link
               className="mt-8 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.12em] text-gold uppercase"
               href="/menu"
             >
               <ArrowLeft size={15} />
-              Torna al menu
+              {copy.back}
             </Link>
           </div>
         </main>
@@ -193,23 +232,38 @@ export default function CocktailDetailPage() {
   }
 
   const allergens = getMenuAllergens(cocktail);
+  const localizedItem = localizeMenuItem(cocktail, locale);
   const displayedAllergens =
     allergens.length > 0
       ? allergens
       : cocktail.category.toLocaleLowerCase("it-IT").includes("food")
-        ? [{ icon: "ℹ️", label: "Chiedi allo staff" }]
+        ? [{ icon: "ℹ️", label: t("menu.askStaff") }]
         : [];
-  const displayTags = getDisplayTags(cocktail.tags);
+  const displayTags = getDisplayTags(cocktail.tags).map((tag) =>
+    localizeMenuTag(tag, locale),
+  );
   const serviceDetails = [
-    { label: "Stile", value: cocktail.product_style },
-    { label: "Gradazione", value: cocktail.alcohol_level },
-    { label: "Bicchiere consigliato", value: cocktail.glassware },
-    { label: "Garnish", value: cocktail.garnish },
-    { label: "Tecnica", value: cocktail.preparation_technique },
-    { label: "Formato", value: cocktail.serving_format },
     {
-      label: "Temperatura di servizio",
-      value: cocktail.serving_temperature,
+      label: copy.style,
+      value: localizeMenuServiceValue(cocktail.product_style, locale),
+    },
+    { label: copy.alcohol, value: cocktail.alcohol_level },
+    {
+      label: copy.glassware,
+      value: localizeMenuServiceValue(cocktail.glassware, locale),
+    },
+    { label: "Garnish", value: cocktail.garnish },
+    { label: copy.technique, value: cocktail.preparation_technique },
+    {
+      label: copy.format,
+      value: localizeMenuServiceValue(cocktail.serving_format, locale),
+    },
+    {
+      label: copy.temperature,
+      value: localizeMenuServiceValue(
+        cocktail.serving_temperature,
+        locale,
+      ),
     },
   ].filter((detail) => Boolean(detail.value));
 
@@ -219,7 +273,7 @@ export default function CocktailDetailPage() {
         <section className="relative min-h-[62vh] overflow-hidden border-b border-border">
           {cocktail.image_url ? (
             <div
-              aria-label={`Prodotto ${cocktail.name}`}
+              aria-label={`${copy.product} ${cocktail.name}`}
               className="absolute inset-0 bg-cover bg-center"
               role="img"
               style={{
@@ -246,14 +300,18 @@ export default function CocktailDetailPage() {
               Menu
             </Link>
             <p className="text-xs font-semibold tracking-[0.24em] text-gold uppercase">
-              {cocktail.category}
+              {localizeMenuCategory(cocktail.category, locale)}
             </p>
             <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <h1 className="max-w-4xl font-display text-6xl leading-[0.9] text-gold-light sm:text-8xl">
                 {cocktail.name}
               </h1>
               <p className="shrink-0 font-display text-3xl text-gold">
-                {formatCocktailPrice(cocktail.price)}
+                {formatCocktailPrice(
+                  cocktail.price,
+                  locale,
+                  t("menu.onRequest"),
+                )}
               </p>
             </div>
           </motion.div>
@@ -268,23 +326,23 @@ export default function CocktailDetailPage() {
               whileInView={{ opacity: 1, y: 0 }}
             >
               <p className="text-[0.65rem] font-semibold tracking-[0.2em] text-gold uppercase">
-                Il prodotto
+                {copy.product}
               </p>
               <h2 className="mt-3 font-display text-4xl text-gold-light">
-                Identità e carattere
+                {copy.identity}
               </h2>
-              {cocktail.description && (
+              {localizedItem.description && (
                 <p className="mt-6 max-w-2xl text-base leading-8 text-noir-gray">
-                  {cocktail.description}
+                  {localizedItem.description}
                 </p>
               )}
-              {cocktail.story && (
+              {localizedItem.story && (
                 <div className="mt-10 border-t border-border pt-8">
                   <p className="text-[0.65rem] font-semibold tracking-[0.2em] text-gold uppercase">
-                    Storia e origine
+                    {copy.story}
                   </p>
                   <p className="mt-4 max-w-2xl text-sm leading-8 text-noir-gray sm:text-base">
-                    {cocktail.story}
+                    {localizedItem.story}
                   </p>
                 </div>
               )}
@@ -292,7 +350,7 @@ export default function CocktailDetailPage() {
               {displayedAllergens.length > 0 && (
                 <div className="mt-8">
                   <p className="text-[0.65rem] font-semibold tracking-[0.16em] text-gold uppercase">
-                    Allergeni
+                    {t("menu.allergens")}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {displayedAllergens.map((allergen) => (
@@ -301,7 +359,7 @@ export default function CocktailDetailPage() {
                         key={allergen.label}
                       >
                         <span aria-hidden="true">{allergen.icon}</span>{" "}
-                        {allergen.label}
+                        {localizeAllergen(allergen.label, locale)}
                       </span>
                     ))}
                   </div>
@@ -317,13 +375,13 @@ export default function CocktailDetailPage() {
               whileInView={{ opacity: 1, y: 0 }}
             >
               <dl className="space-y-6">
-                {cocktail.ingredients && (
+                {localizedItem.ingredients && (
                   <div>
                     <dt className="text-[0.62rem] font-semibold tracking-[0.16em] text-gold uppercase">
-                      Prodotti e ingredienti
+                      {copy.tasting}
                     </dt>
                     <dd className="mt-2 text-sm leading-7 text-noir-gray">
-                      {cocktail.ingredients}
+                      {localizedItem.ingredients}
                     </dd>
                   </div>
                 )}
@@ -343,7 +401,7 @@ export default function CocktailDetailPage() {
                 {cocktail.staff_recommendation && (
                   <div className="border-t border-border pt-6">
                     <dt className="text-[0.62rem] font-semibold tracking-[0.16em] text-gold uppercase">
-                      Il consiglio dello staff
+                      {copy.staff}
                     </dt>
                     <dd className="mt-2 text-sm leading-7 text-noir-gray">
                       {cocktail.staff_recommendation}
@@ -353,7 +411,7 @@ export default function CocktailDetailPage() {
                 {cocktail.pairing && (
                   <div className="border-t border-border pt-6">
                     <dt className="text-[0.62rem] font-semibold tracking-[0.16em] text-gold uppercase">
-                      Abbinamento consigliato
+                      {copy.pairing}
                     </dt>
                     <dd className="mt-2 text-sm leading-7 text-noir-gray">
                       {cocktail.pairing}
@@ -370,7 +428,7 @@ export default function CocktailDetailPage() {
                   openReservation();
                 }}
               >
-                Prenota un tavolo
+                {t("nav.booking")}
               </PremiumButton>
               <PremiumButton
                 className="mt-3 w-full"
@@ -378,7 +436,7 @@ export default function CocktailDetailPage() {
                 variant="outline"
               >
                 <ArrowLeft aria-hidden="true" size={15} />
-                Torna al menu
+                {copy.back}
               </PremiumButton>
             </motion.aside>
           </div>
@@ -388,10 +446,10 @@ export default function CocktailDetailPage() {
           <section className="border-t border-border px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
             <div className="mx-auto max-w-7xl">
               <p className="text-[0.65rem] font-semibold tracking-[0.2em] text-gold uppercase">
-                Continua l&apos;esperienza
+                {copy.relatedEyebrow}
               </p>
               <h2 className="mt-3 font-display text-4xl text-gold-light sm:text-5xl">
-                Prodotti correlati
+                {copy.related}
               </h2>
               <div className="mt-10 grid gap-7 md:grid-cols-2 lg:grid-cols-3">
                 {relatedCocktails.map((relatedCocktail) => (

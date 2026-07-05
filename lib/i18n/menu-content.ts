@@ -1,8 +1,10 @@
 import type { Locale } from "./types";
+import { premiumSpirits } from "@/lib/data/premium-spirits";
 
 type MenuItemContent = {
   description?: string;
   ingredients?: string;
+  story?: string;
 };
 
 const englishCategories: Record<string, string> = {
@@ -43,7 +45,7 @@ const englishCategoryIntroductions: Record<string, string> = {
   birre:
     "Lagers, stouts and wheat beers from established Italian and international breweries.",
   "alcolici premium":
-    "A refined selection of spirits chosen for neat tasting and essential cocktails.",
+    "Premium bottles served at the table for exclusive tastings, private evenings and moments designed to be shared.",
   "cocktail analcolici":
     "Alcohol-free drinks built with juices, botanicals and quality mixers.",
   analcolici:
@@ -60,6 +62,16 @@ const englishCategoryIntroductions: Record<string, string> = {
 };
 
 const englishMenuItems: Record<string, MenuItemContent> = {
+  ...Object.fromEntries(
+    premiumSpirits.map((spirit) => [
+      spirit.name.toLocaleLowerCase("it-IT"),
+      {
+        description: spirit.description.en,
+        ingredients: spirit.tastingNotes.en,
+        story: spirit.story.en,
+      },
+    ]),
+  ),
   "delirium tremens": {
     description:
       "An iconic Belgian beer, intense and spicy, with fruity notes, an elegant body and a persistent finish.",
@@ -296,13 +308,19 @@ export function localizeMenuCategoryIntroduction(
 }
 
 export function localizeMenuItem(
-  item: { name: string; description?: string | null; ingredients?: string | null },
+  item: {
+    name: string;
+    description?: string | null;
+    ingredients?: string | null;
+    story?: string | null;
+  },
   locale: Locale,
 ): MenuItemContent {
   if (locale === "it") {
     return {
       description: item.description?.trim() || undefined,
       ingredients: item.ingredients?.trim() || undefined,
+      story: item.story?.trim() || undefined,
     };
   }
 
@@ -325,8 +343,38 @@ export function localizeMenuTag(tag: string, locale: Locale) {
     invecchiato: "Aged",
     torbato: "Peaty",
     aperitivo: "Aperitif",
+    polonia: "Poland",
+    francia: "France",
+    scozia: "Scotland",
+    germania: "Germany",
+    giappone: "Japan",
+    floreale: "Floral",
+    marino: "Maritime",
+    mediterraneo: "Mediterranean",
     caffè: "Coffee",
   };
 
   return tags[normalize(tag)] || tag;
+}
+
+export function localizeMenuServiceValue(
+  value: string | null | undefined,
+  locale: Locale,
+) {
+  if (!value || locale === "it") return value;
+
+  const exactValues: Record<string, string> = {
+    "bottiglia premium": "Premium bottle",
+    "gin mediterraneo": "Mediterranean gin",
+    "gin scozzese": "Scottish gin",
+    "gin agrumato": "Citrus gin",
+    "rum invecchiato": "Aged rum",
+    "servizio al tavolo": "Table service",
+  };
+  const normalizedValue = normalize(value);
+
+  if (exactValues[normalizedValue]) return exactValues[normalizedValue];
+
+  const bottleMatch = value.match(/^Bottiglia\s+(.+)$/i);
+  return bottleMatch ? `${bottleMatch[1]} bottle` : value;
 }

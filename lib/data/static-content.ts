@@ -1,3 +1,5 @@
+import { premiumSpirits } from "@/lib/data/premium-spirits";
+
 export type Event = {
   title: string;
   schedule: string;
@@ -47,6 +49,11 @@ export type PublicMenuItem = {
   tags: string[];
   isFeatured: boolean;
   sortOrder: number;
+  story?: string;
+  alcoholLevel?: string;
+  productStyle?: string;
+  servingFormat?: string;
+  servingTemperature?: string;
 };
 
 export type PublicMenuCategory = {
@@ -111,87 +118,24 @@ export const fallbackMenu = [
     id: "fallback-premium",
     name: "Alcolici Premium",
     slug: "alcolici-premium",
-    description: "Una selezione di distillati ed etichette premium.",
+    description:
+      "Selezione di bottiglie premium servite al tavolo, pensate per degustazioni esclusive, serate private e momenti da condividere.",
     sortOrder: 2,
-    items: [
-      {
-        id: "fallback-vodka-premium",
-        name: "Vodka Premium",
-        description:
-          "Distillato cristallino, morbido e raffinato, ideale per una degustazione pulita o per cocktail essenziali dal carattere elegante.",
-        ingredients:
-          "Distillato di cereali selezionati; note pulite, morbide e minerali",
-        price: 10,
-        imageUrl: null,
-        tags: ["Premium", "Nessun allergene"],
-        isFeatured: false,
-        sortOrder: 1,
-      },
-      {
-        id: "fallback-gin-premium",
-        name: "Gin Premium",
-        description:
-          "Gin selezionato con botaniche pregiate, profumi agrumati e note erbacee, pensato per drink sofisticati e aromatici.",
-        ingredients: "Ginepro, scorze di agrumi e botaniche selezionate",
-        price: 11,
-        imageUrl: null,
-        tags: ["Premium", "Botanico", "Nessun allergene"],
-        isFeatured: false,
-        sortOrder: 2,
-      },
-      {
-        id: "fallback-rum-premium",
-        name: "Rum Premium",
-        description:
-          "Rum invecchiato, caldo e avvolgente, con sfumature di vaniglia, spezie dolci e legno tostato.",
-        ingredients:
-          "Distillato di canna da zucchero affinato in legno; note di vaniglia e spezie",
-        price: 11,
-        imageUrl: null,
-        tags: ["Premium", "Invecchiato", "Nessun allergene"],
-        isFeatured: false,
-        sortOrder: 3,
-      },
-      {
-        id: "fallback-whisky-premium",
-        name: "Whisky Premium",
-        description:
-          "Distillato elegante e complesso, con note torbate, caramello, frutta secca e finale lungo.",
-        ingredients:
-          "Whisky affinato in botte; note torbate, caramello e frutta secca",
-        price: 12,
-        imageUrl: null,
-        tags: ["Premium", "Torbato", "Nessun allergene"],
-        isFeatured: false,
-        sortOrder: 4,
-      },
-      {
-        id: "fallback-tequila-premium",
-        name: "Tequila Premium",
-        description:
-          "Agave selezionata, gusto pulito e minerale, con accenti vegetali e una chiusura intensa.",
-        ingredients:
-          "Distillato di agave blu; note vegetali, minerali e agrumate",
-        price: 11,
-        imageUrl: null,
-        tags: ["Premium", "Agave", "Nessun allergene"],
-        isFeatured: false,
-        sortOrder: 5,
-      },
-      {
-        id: "fallback-mezcal-premium",
-        name: "Mezcal Premium",
-        description:
-          "Distillato affumicato e profondo, con carattere deciso, note terrose e profilo aromatico persistente.",
-        ingredients:
-          "Distillato artigianale di agave cotta; note affumicate e terrose",
-        price: 12,
-        imageUrl: null,
-        tags: ["Premium", "Affumicato", "Nessun allergene"],
-        isFeatured: false,
-        sortOrder: 6,
-      },
-    ],
+    items: premiumSpirits.map((spirit) => ({
+      id: spirit.id,
+      name: spirit.name,
+      description: spirit.description.it,
+      ingredients: spirit.tastingNotes.it,
+      price: spirit.price,
+      imageUrl: null,
+      tags: spirit.tags,
+      isFeatured: false,
+      sortOrder: spirit.sortOrder,
+      story: spirit.story.it,
+      alcoholLevel: spirit.alcoholLevel,
+      productStyle: "Bottiglia premium",
+      servingFormat: spirit.servingFormat,
+    })),
   },
   {
     id: "fallback-birre",
