@@ -106,6 +106,8 @@ const categoryIntroductions: Record<string, string> = {
     "Rossi italiani scelti per struttura, equilibrio e vocazione gastronomica.",
   Birre:
     "Lager, stout e weiss tra grandi classici italiani e internazionali.",
+  "Alcolici Premium":
+    "Distillati selezionati per degustazioni pulite e cocktail essenziali dal carattere elegante.",
   "Cocktail Analcolici":
     "Miscelazioni alcohol free costruite con succhi, botaniche e mixer di qualità.",
   "Soft Drinks":
@@ -139,6 +141,7 @@ const fullCategoryNames = [
   "Vini Bianchi",
   "Vini Rossi",
   "Birre",
+  "Alcolici Premium",
   "Cocktail Analcolici",
   "Soft Drinks",
   "Acque",
@@ -527,17 +530,20 @@ export function Menu({
     };
   }, [featuredOnly, loadMenu]);
 
-  const hasLiveAmari = menuItems.some(
-    (item) => normalizeCategory(item.category) === "amari",
-  );
-  const amariFallbackItems = fallbackItems.filter(
-    (item) => normalizeCategory(item.category) === "amari",
+  const supplementalCategoryNames = [
+    "Birre",
+    "Alcolici Premium",
+    "Amari",
+  ];
+  const supplementalFallbackItems = fallbackItems.filter((item) =>
+    supplementalCategoryNames.some(
+      (categoryName) =>
+        normalizeCategory(item.category) === normalizeCategory(categoryName),
+    ),
   );
   const displayedItems = deduplicateMenuItems(
     menuItems.length > 0
-      ? hasLiveAmari
-        ? menuItems
-        : [...menuItems, ...amariFallbackItems]
+      ? [...menuItems, ...supplementalFallbackItems]
       : fallbackItems,
   );
   const displayedCategories =

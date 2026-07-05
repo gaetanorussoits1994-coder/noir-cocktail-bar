@@ -27,6 +27,11 @@ const allergenDefinitions: Array<
   },
   { icon: "🌿", label: "Senape", keywords: ["senape", "mustard"] },
   { icon: "🍯", label: "Sesamo", keywords: ["sesamo", "tahina", "tahini"] },
+  {
+    icon: "✓",
+    label: "Nessuno",
+    keywords: ["nessun allergene", "no declared allergens"],
+  },
 ];
 
 function normalize(value: string) {

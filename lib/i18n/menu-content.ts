@@ -14,6 +14,7 @@ const englishCategories: Record<string, string> = {
   "vini bianchi": "White Wines",
   "vini rossi": "Red Wines",
   birre: "Beers",
+  "alcolici premium": "Premium Spirits",
   "cocktail analcolici": "Alcohol-Free Cocktails",
   analcolici: "Alcohol-Free Cocktails",
   "soft drinks": "Soft Drinks",
@@ -41,6 +42,8 @@ const englishCategoryIntroductions: Record<string, string> = {
     "Italian red wines selected for structure, balance and gastronomic character.",
   birre:
     "Lagers, stouts and wheat beers from established Italian and international breweries.",
+  "alcolici premium":
+    "A refined selection of spirits chosen for neat tasting and essential cocktails.",
   "cocktail analcolici":
     "Alcohol-free drinks built with juices, botanicals and quality mixers.",
   analcolici:
@@ -57,6 +60,46 @@ const englishCategoryIntroductions: Record<string, string> = {
 };
 
 const englishMenuItems: Record<string, MenuItemContent> = {
+  "delirium tremens": {
+    description:
+      "An iconic Belgian beer, intense and spicy, with fruity notes, an elegant body and a persistent finish.",
+    ingredients: "Water, barley malt, hops, yeast and spices",
+  },
+  "vodka premium": {
+    description:
+      "A crystal-clear, smooth and refined spirit, ideal for a clean tasting experience or essential cocktails with an elegant character.",
+    ingredients:
+      "Selected grain spirit; clean, smooth and mineral tasting notes",
+  },
+  "gin premium": {
+    description:
+      "Selected gin with fine botanicals, citrus aromas and herbal notes, designed for sophisticated and aromatic drinks.",
+    ingredients: "Juniper, citrus peel and selected botanicals",
+  },
+  "rum premium": {
+    description:
+      "A warm, enveloping aged rum with nuances of vanilla, sweet spices and toasted oak.",
+    ingredients:
+      "Barrel-aged sugar cane spirit; vanilla and sweet spice notes",
+  },
+  "whisky premium": {
+    description:
+      "An elegant, complex spirit with peaty notes, caramel, dried fruit and a long finish.",
+    ingredients:
+      "Barrel-aged whisky; peat, caramel and dried fruit tasting notes",
+  },
+  "tequila premium": {
+    description:
+      "Selected agave offers a clean, mineral profile with vegetal accents and an intense finish.",
+    ingredients:
+      "Blue agave spirit; vegetal, mineral and citrus tasting notes",
+  },
+  "mezcal premium": {
+    description:
+      "A deep, smoky spirit with a decisive character, earthy notes and a persistent aromatic profile.",
+    ingredients:
+      "Artisanal cooked-agave spirit; smoky and earthy tasting notes",
+  },
   "mezcal negroni": {
     description:
       "Mezcal, Italian bitter and red vermouth replace gin botanicals with cooked agave and smoke. The result remains true to the Negroni's bittersweet structure.",
@@ -232,6 +275,7 @@ const englishAllergens: Record<string, string> = {
   Solfiti: "Sulphites",
   Senape: "Mustard",
   Sesamo: "Sesame",
+  Nessuno: "None",
 };
 
 function normalize(value: string | null | undefined) {
@@ -277,6 +321,9 @@ export function localizeMenuTag(tag: string, locale: Locale) {
     agrumato: "Citrus",
     affumicato: "Smoky",
     amaro: "Bitter",
+    botanico: "Botanical",
+    invecchiato: "Aged",
+    torbato: "Peaty",
     aperitivo: "Aperitif",
     caffè: "Coffee",
   };
