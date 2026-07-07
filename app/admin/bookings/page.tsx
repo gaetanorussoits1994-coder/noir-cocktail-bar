@@ -40,6 +40,9 @@ const bookingCopy = {
     guests: "Ospiti", created: "Creata", customer: "Cliente",
     contacts: "Contatti", dateTime: "Data / Ora", status: "Stato",
     notes: "Note", createdAt: "Creata il", actions: "Azioni",
+    supabaseUnavailable: "Client Supabase non disponibile.",
+    whatsappConfirmed: "Ciao {name}, la tua prenotazione da Noir Cocktail Bar per il giorno {date} alle {time} per {guests} persone e confermata. Ti aspettiamo.",
+    whatsappRejected: "Ciao {name}, ci dispiace ma nella fascia oraria scelta non abbiamo disponibilita. Ti invitiamo a scegliere un altro orario o a contattarci per maggiori informazioni.",
     statuses: { pending: "In attesa", confirmed: "Confermata", rejected: "Rifiutata", cancelled: "Annullata" },
   },
   en: {
@@ -52,6 +55,9 @@ const bookingCopy = {
     guests: "Guests", created: "Created", customer: "Guest",
     contacts: "Contact details", dateTime: "Date / Time", status: "Status",
     notes: "Notes", createdAt: "Submitted at", actions: "Actions",
+    supabaseUnavailable: "Supabase client is unavailable.",
+    whatsappConfirmed: "Hi {name}, your booking at Noir Cocktail Bar for {date} at {time} for {guests} guests is confirmed. We look forward to welcoming you.",
+    whatsappRejected: "Hi {name}, unfortunately we do not have availability for the selected time slot. Please choose another time or contact us for more information.",
     statuses: { pending: "Pending", confirmed: "Confirmed", rejected: "Rejected", cancelled: "Cancelled" },
   },
 } as const;
@@ -87,15 +93,22 @@ function formatDate(value: string) {
   return dateFormatter.format(new Date(`${value}T00:00:00`));
 }
 
-function getWhatsAppHref(booking: AdminReservationRow) {
+function getWhatsAppHref(
+  booking: AdminReservationRow,
+  labels: typeof bookingCopy.it | typeof bookingCopy.en,
+) {
   let phone = booking.customer_phone.replace(/\D/g, "");
   if (phone.startsWith("00")) phone = phone.slice(2);
   if (phone.length === 10 && phone.startsWith("3")) phone = `39${phone}`;
 
   const message =
     booking.status === "confirmed"
-      ? `Ciao ${booking.customer_name}, la tua prenotazione da Noir Cocktail Bar per il giorno ${formatDate(booking.reservation_date)} alle ${booking.reservation_time.slice(0, 5)} per ${booking.guests} persone è confermata. Ti aspettiamo.`
-      : `Ciao ${booking.customer_name}, ci dispiace ma nella fascia oraria scelta non abbiamo disponibilità. Ti invitiamo a scegliere un altro orario o a contattarci per maggiori informazioni.`;
+      ? labels.whatsappConfirmed
+          .replace("{name}", booking.customer_name)
+          .replace("{date}", formatDate(booking.reservation_date))
+          .replace("{time}", booking.reservation_time.slice(0, 5))
+          .replace("{guests}", String(booking.guests))
+      : labels.whatsappRejected.replace("{name}", booking.customer_name);
 
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 }
@@ -117,7 +130,7 @@ export default function AdminBookingsPage() {
     const supabase = getSupabaseClient();
 
     if (!supabase) {
-      setError("Client Supabase non disponibile.");
+      setError(labels.supabaseUnavailable);
       setIsLoading(false);
       return;
     }
@@ -150,7 +163,7 @@ export default function AdminBookingsPage() {
 
     setIsLoading(false);
     isFetchingRef.current = false;
-  }, []);
+  }, [labels.supabaseUnavailable]);
 
   useEffect(() => {
     void loadBookings();
@@ -266,7 +279,7 @@ export default function AdminBookingsPage() {
               secondaryButtonClass,
               "border-emerald-300/20 text-emerald-100",
             )}
-            href={getWhatsAppHref(booking)}
+            href={getWhatsAppHref(booking, labels)}
             rel="noreferrer"
             target="_blank"
           >

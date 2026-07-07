@@ -16,6 +16,7 @@ import {
   primaryButtonClass,
   secondaryButtonClass,
 } from "@/components/admin/admin-ui";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { getSupabaseClient } from "@/lib/supabase";
 import type { EventRow } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
@@ -38,6 +39,33 @@ const emptyForm: EventFormState = {
   isActive: true,
 };
 
+const eventCopy = {
+  it: {
+    new: "Nuovo evento", edit: "Modifica evento", details: "Dettagli evento",
+    description: "Crea e aggiorna il calendario delle esperienze Noir.",
+    title: "Eventi", close: "Chiudi form", eventTitle: "Titolo",
+    eventDescription: "Descrizione", date: "Data", time: "Ora",
+    imageUrl: "Immagine URL", active: "Evento attivo", saving: "Salvataggio...",
+    save: "Salva evento", cancel: "Annulla", loading: "Caricamento eventi...",
+    empty: "Nessun evento presente.", deleteConfirm: "Eliminare definitivamente questo evento?",
+    activeBadge: "Attivo", hiddenBadge: "Nascosto", editAction: "Modifica",
+    delete: "Elimina", dateTbd: "Data da definire", supabaseUnavailable: "Client Supabase non disponibile.",
+    imageLabel: "Immagine",
+  },
+  en: {
+    new: "New event", edit: "Edit event", details: "Event details",
+    description: "Create and update the Noir experience calendar.",
+    title: "Events", close: "Close form", eventTitle: "Title",
+    eventDescription: "Description", date: "Date", time: "Time",
+    imageUrl: "Image URL", active: "Active event", saving: "Saving...",
+    save: "Save event", cancel: "Cancel", loading: "Loading events...",
+    empty: "No events found.", deleteConfirm: "Permanently delete this event?",
+    activeBadge: "Active", hiddenBadge: "Hidden", editAction: "Edit",
+    delete: "Delete", dateTbd: "Date to be confirmed", supabaseUnavailable: "Supabase client is unavailable.",
+    imageLabel: "Image",
+  },
+} as const;
+
 const dateFormatter = new Intl.DateTimeFormat("it-IT", {
   day: "2-digit",
   month: "long",
@@ -45,6 +73,8 @@ const dateFormatter = new Intl.DateTimeFormat("it-IT", {
 });
 
 export default function AdminEventsPage() {
+  const { locale } = useTranslation();
+  const labels = eventCopy[locale];
   const [events, setEvents] = useState<EventRow[]>([]);
   const [form, setForm] = useState<EventFormState>(emptyForm);
   const [editingId, setEditingId] = useState("");
@@ -57,7 +87,7 @@ export default function AdminEventsPage() {
     const supabase = getSupabaseClient();
 
     if (!supabase) {
-      setError("Client Supabase non disponibile.");
+      setError(labels.supabaseUnavailable);
       setIsLoading(false);
       return;
     }
@@ -75,7 +105,7 @@ export default function AdminEventsPage() {
     }
 
     setIsLoading(false);
-  }, []);
+  }, [labels.supabaseUnavailable]);
 
   useEffect(() => {
     void loadEvents();
@@ -140,7 +170,7 @@ export default function AdminEventsPage() {
   }
 
   async function deleteEvent(id: string) {
-    if (!window.confirm("Eliminare definitivamente questo evento?")) return;
+    if (!window.confirm(labels.deleteConfirm)) return;
 
     const supabase = getSupabaseClient();
     if (!supabase) return;
@@ -164,12 +194,12 @@ export default function AdminEventsPage() {
             type="button"
           >
             <Plus size={17} />
-            Nuovo evento
+            {labels.new}
           </button>
         }
-        description="Crea e aggiorna il calendario delle esperienze Noir."
+        description={labels.description}
         eyebrow="Noir nights"
-        title="Eventi"
+        title={labels.title}
       />
 
       {error && <AdminError message={error} />}
@@ -179,14 +209,14 @@ export default function AdminEventsPage() {
           <div className="mb-6 flex items-start justify-between">
             <div>
               <p className="text-[0.65rem] font-semibold tracking-[0.18em] text-gold uppercase">
-                {editingId ? "Modifica evento" : "Nuovo evento"}
+                {editingId ? labels.edit : labels.new}
               </p>
               <h2 className="mt-2 font-display text-3xl text-gold-light">
-                Dettagli evento
+                {labels.details}
               </h2>
             </div>
             <button
-              aria-label="Chiudi form"
+              aria-label={labels.close}
               className={secondaryButtonClass}
               onClick={closeForm}
               type="button"
@@ -200,7 +230,7 @@ export default function AdminEventsPage() {
             onSubmit={handleSubmit}
           >
             <label className="md:col-span-2">
-              <span className={labelClass}>Titolo</span>
+              <span className={labelClass}>{labels.eventTitle}</span>
               <input
                 className={inputClass}
                 onChange={(event) =>
@@ -215,7 +245,7 @@ export default function AdminEventsPage() {
             </label>
 
             <label className="md:col-span-2">
-              <span className={labelClass}>Descrizione</span>
+              <span className={labelClass}>{labels.eventDescription}</span>
               <textarea
                 className={cn(inputClass, "min-h-28 resize-y")}
                 onChange={(event) =>
@@ -229,7 +259,7 @@ export default function AdminEventsPage() {
             </label>
 
             <label>
-              <span className={labelClass}>Data</span>
+              <span className={labelClass}>{labels.date}</span>
               <input
                 className={inputClass}
                 onChange={(event) =>
@@ -244,7 +274,7 @@ export default function AdminEventsPage() {
             </label>
 
             <label>
-              <span className={labelClass}>Ora</span>
+              <span className={labelClass}>{labels.time}</span>
               <input
                 className={inputClass}
                 onChange={(event) =>
@@ -259,7 +289,7 @@ export default function AdminEventsPage() {
             </label>
 
             <label className="md:col-span-2">
-              <span className={labelClass}>Immagine URL</span>
+              <span className={labelClass}>{labels.imageUrl}</span>
               <input
                 className={inputClass}
                 onChange={(event) =>
@@ -284,7 +314,7 @@ export default function AdminEventsPage() {
                 }
                 type="checkbox"
               />
-              Evento attivo
+              {labels.active}
             </label>
 
             <div className="flex flex-wrap gap-3 md:col-span-2">
@@ -294,14 +324,14 @@ export default function AdminEventsPage() {
                 type="submit"
               >
                 <Save size={16} />
-                {isSaving ? "Salvataggio..." : "Salva evento"}
+                {isSaving ? labels.saving : labels.save}
               </button>
               <button
                 className={secondaryButtonClass}
                 onClick={closeForm}
                 type="button"
               >
-                Annulla
+                {labels.cancel}
               </button>
             </div>
           </form>
@@ -309,9 +339,9 @@ export default function AdminEventsPage() {
       )}
 
       {isLoading ? (
-        <AdminLoading label="Caricamento eventi..." />
+        <AdminLoading label={labels.loading} />
       ) : events.length === 0 ? (
-        <AdminEmpty message="Nessun evento presente." />
+        <AdminEmpty message={labels.empty} />
       ) : (
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {events.map((event) => (
@@ -321,7 +351,7 @@ export default function AdminEventsPage() {
             >
               {event.image_url && (
                 <div
-                  aria-label={`Immagine ${event.title}`}
+                  aria-label={`${labels.imageLabel} ${event.title}`}
                   className="h-44 bg-cover bg-center"
                   role="img"
                   style={{ backgroundImage: `url("${event.image_url}")` }}
@@ -335,7 +365,7 @@ export default function AdminEventsPage() {
                         ? dateFormatter.format(
                             new Date(`${event.event_date}T00:00:00`),
                           )
-                        : "Data da definire"}
+                        : labels.dateTbd}
                       {event.event_time &&
                         ` · ${event.event_time.slice(0, 5)}`}
                     </p>
@@ -351,7 +381,7 @@ export default function AdminEventsPage() {
                         : "border-white/10 text-noir-gray",
                     )}
                   >
-                    {event.is_active ? "Attivo" : "Nascosto"}
+                    {event.is_active ? labels.activeBadge : labels.hiddenBadge}
                   </span>
                 </div>
 
@@ -368,7 +398,7 @@ export default function AdminEventsPage() {
                     type="button"
                   >
                     <Edit3 size={15} />
-                    Modifica
+                    {labels.editAction}
                   </button>
                   <button
                     className={dangerButtonClass}
@@ -376,7 +406,7 @@ export default function AdminEventsPage() {
                     type="button"
                   >
                     <Trash2 size={15} />
-                    Elimina
+                    {labels.delete}
                   </button>
                 </div>
               </div>

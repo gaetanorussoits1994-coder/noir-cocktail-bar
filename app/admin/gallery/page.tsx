@@ -16,6 +16,7 @@ import {
   primaryButtonClass,
   secondaryButtonClass,
 } from "@/components/admin/admin-ui";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { getSupabaseClient } from "@/lib/supabase";
 import type { GalleryImageRow } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
@@ -36,7 +37,34 @@ const emptyForm: GalleryFormState = {
   isActive: true,
 };
 
+const galleryCopy = {
+  it: {
+    new: "Nuova immagine", edit: "Modifica immagine", details: "Dettagli gallery",
+    description: "Gestisci le immagini mostrate nella gallery pubblica.",
+    title: "Gallery", close: "Chiudi form", imageTitle: "Titolo",
+    order: "Ordine", imageUrl: "Image URL", alt: "Testo alternativo",
+    active: "Immagine attiva", saving: "Salvataggio...", save: "Salva immagine",
+    cancel: "Annulla", loading: "Caricamento gallery...", empty: "Nessuna immagine presente.",
+    deleteConfirm: "Eliminare definitivamente questa immagine?", imageFallback: "Immagine gallery",
+    untitled: "Senza titolo", activeBadge: "Attiva", hiddenBadge: "Nascosta",
+    editAction: "Modifica", delete: "Elimina", supabaseUnavailable: "Client Supabase non disponibile.",
+  },
+  en: {
+    new: "New image", edit: "Edit image", details: "Gallery details",
+    description: "Manage the images shown in the public gallery.",
+    title: "Gallery", close: "Close form", imageTitle: "Title",
+    order: "Order", imageUrl: "Image URL", alt: "Alternative text",
+    active: "Active image", saving: "Saving...", save: "Save image",
+    cancel: "Cancel", loading: "Loading gallery...", empty: "No images found.",
+    deleteConfirm: "Permanently delete this image?", imageFallback: "Gallery image",
+    untitled: "Untitled", activeBadge: "Active", hiddenBadge: "Hidden",
+    editAction: "Edit", delete: "Delete", supabaseUnavailable: "Supabase client is unavailable.",
+  },
+} as const;
+
 export default function AdminGalleryPage() {
+  const { locale } = useTranslation();
+  const labels = galleryCopy[locale];
   const [images, setImages] = useState<GalleryImageRow[]>([]);
   const [form, setForm] = useState<GalleryFormState>(emptyForm);
   const [editingId, setEditingId] = useState("");
@@ -49,7 +77,7 @@ export default function AdminGalleryPage() {
     const supabase = getSupabaseClient();
 
     if (!supabase) {
-      setError("Client Supabase non disponibile.");
+      setError(labels.supabaseUnavailable);
       setIsLoading(false);
       return;
     }
@@ -66,7 +94,7 @@ export default function AdminGalleryPage() {
     }
 
     setIsLoading(false);
-  }, []);
+  }, [labels.supabaseUnavailable]);
 
   useEffect(() => {
     void loadImages();
@@ -132,7 +160,7 @@ export default function AdminGalleryPage() {
   }
 
   async function deleteImage(id: string) {
-    if (!window.confirm("Eliminare definitivamente questa immagine?")) return;
+    if (!window.confirm(labels.deleteConfirm)) return;
 
     const supabase = getSupabaseClient();
     if (!supabase) return;
@@ -156,12 +184,12 @@ export default function AdminGalleryPage() {
             type="button"
           >
             <Plus size={17} />
-            Nuova immagine
+            {labels.new}
           </button>
         }
-        description="Gestisci le immagini mostrate nella gallery pubblica."
+        description={labels.description}
         eyebrow="Visual archive"
-        title="Gallery"
+        title={labels.title}
       />
 
       {error && <AdminError message={error} />}
@@ -171,14 +199,14 @@ export default function AdminGalleryPage() {
           <div className="mb-6 flex items-start justify-between">
             <div>
               <p className="text-[0.65rem] font-semibold tracking-[0.18em] text-gold uppercase">
-                {editingId ? "Modifica immagine" : "Nuova immagine"}
+                {editingId ? labels.edit : labels.new}
               </p>
               <h2 className="mt-2 font-display text-3xl text-gold-light">
-                Dettagli gallery
+                {labels.details}
               </h2>
             </div>
             <button
-              aria-label="Chiudi form"
+              aria-label={labels.close}
               className={secondaryButtonClass}
               onClick={closeForm}
               type="button"
@@ -192,7 +220,7 @@ export default function AdminGalleryPage() {
             onSubmit={handleSubmit}
           >
             <label>
-              <span className={labelClass}>Titolo</span>
+              <span className={labelClass}>{labels.imageTitle}</span>
               <input
                 className={inputClass}
                 onChange={(event) =>
@@ -206,7 +234,7 @@ export default function AdminGalleryPage() {
             </label>
 
             <label>
-              <span className={labelClass}>Ordine</span>
+              <span className={labelClass}>{labels.order}</span>
               <input
                 className={inputClass}
                 onChange={(event) =>
@@ -221,7 +249,7 @@ export default function AdminGalleryPage() {
             </label>
 
             <label className="md:col-span-2">
-              <span className={labelClass}>Image URL</span>
+              <span className={labelClass}>{labels.imageUrl}</span>
               <input
                 className={inputClass}
                 onChange={(event) =>
@@ -236,7 +264,7 @@ export default function AdminGalleryPage() {
             </label>
 
             <label className="md:col-span-2">
-              <span className={labelClass}>Testo alternativo</span>
+              <span className={labelClass}>{labels.alt}</span>
               <input
                 className={inputClass}
                 onChange={(event) =>
@@ -261,7 +289,7 @@ export default function AdminGalleryPage() {
                 }
                 type="checkbox"
               />
-              Immagine attiva
+              {labels.active}
             </label>
 
             <div className="flex flex-wrap gap-3 md:col-span-2">
@@ -271,14 +299,14 @@ export default function AdminGalleryPage() {
                 type="submit"
               >
                 <Save size={16} />
-                {isSaving ? "Salvataggio..." : "Salva immagine"}
+                {isSaving ? labels.saving : labels.save}
               </button>
               <button
                 className={secondaryButtonClass}
                 onClick={closeForm}
                 type="button"
               >
-                Annulla
+                {labels.cancel}
               </button>
             </div>
           </form>
@@ -286,9 +314,9 @@ export default function AdminGalleryPage() {
       )}
 
       {isLoading ? (
-        <AdminLoading label="Caricamento gallery..." />
+        <AdminLoading label={labels.loading} />
       ) : images.length === 0 ? (
-        <AdminEmpty message="Nessuna immagine presente." />
+        <AdminEmpty message={labels.empty} />
       ) : (
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {images.map((image) => (
@@ -297,7 +325,7 @@ export default function AdminGalleryPage() {
               key={image.id}
             >
               <div
-                aria-label={image.alt || image.title || "Immagine gallery"}
+                aria-label={image.alt || image.title || labels.imageFallback}
                 className="aspect-[4/3] bg-cover bg-center"
                 role="img"
                 style={{ backgroundImage: `url("${image.image_url}")` }}
@@ -306,7 +334,7 @@ export default function AdminGalleryPage() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <h2 className="break-words font-display text-2xl text-gold-light">
-                      {image.title || "Senza titolo"}
+                      {image.title || labels.untitled}
                     </h2>
                     <p className="mt-1 break-all text-xs text-noir-gray">
                       {image.image_url}
@@ -320,12 +348,12 @@ export default function AdminGalleryPage() {
                         : "border-white/10 text-noir-gray",
                     )}
                   >
-                    {image.is_active ? "Attiva" : "Nascosta"}
+                    {image.is_active ? labels.activeBadge : labels.hiddenBadge}
                   </span>
                 </div>
 
                 <p className="mt-3 text-xs text-noir-gray">
-                  Ordine: {image.sort_order}
+                  {labels.order}: {image.sort_order}
                   {image.alt && ` · Alt: ${image.alt}`}
                 </p>
 
@@ -336,7 +364,7 @@ export default function AdminGalleryPage() {
                     type="button"
                   >
                     <Edit3 size={15} />
-                    Modifica
+                    {labels.editAction}
                   </button>
                   <button
                     className={dangerButtonClass}
@@ -344,7 +372,7 @@ export default function AdminGalleryPage() {
                     type="button"
                   >
                     <Trash2 size={15} />
-                    Elimina
+                    {labels.delete}
                   </button>
                 </div>
               </div>

@@ -12,7 +12,7 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useTranslation } from "@/lib/i18n/use-translation";
@@ -32,11 +32,30 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const isLoginPage = pathname === "/admin/login";
+  const isBookingsPage =
+    pathname === "/admin/bookings" ||
+    pathname === "/admin/reservations" ||
+    pathname === "/admin/prenotazioni";
   const [isLoading, setIsLoading] = useState(!isLoginPage);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [configurationError, setConfigurationError] = useState("");
   const [logoutError, setLogoutError] = useState("");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [pendingBookingsCount, setPendingBookingsCount] = useState(0);
+
+  const loadPendingBookingsCount = useCallback(async () => {
+    if (isLoginPage || !isAuthenticated) return;
+
+    const supabase = getSupabaseClient();
+    if (!supabase) return;
+
+    const { count, error } = await supabase
+      .from("reservations")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending");
+
+    if (!error) setPendingBookingsCount(count ?? 0);
+  }, [isAuthenticated, isLoginPage]);
 
   useEffect(() => {
     if (isLoginPage) {
@@ -114,6 +133,19 @@ export function AdminShell({ children }: { children: ReactNode }) {
     };
   }, [isLoginPage, router, t]);
 
+  useEffect(() => {
+    if (isLoginPage || !isAuthenticated) return;
+
+    void loadPendingBookingsCount();
+    const intervalId = window.setInterval(loadPendingBookingsCount, 10_000);
+
+    return () => window.clearInterval(intervalId);
+  }, [isAuthenticated, isLoginPage, loadPendingBookingsCount]);
+
+  useEffect(() => {
+    if (isBookingsPage) void loadPendingBookingsCount();
+  }, [isBookingsPage, loadPendingBookingsCount]);
+
   async function handleLogout() {
     const supabase = getSupabaseClient();
 
@@ -188,6 +220,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
             const isActive =
               pathname === href ||
               (href !== "/admin" && pathname.startsWith(`${href}/`));
+            const showBookingsBadge =
+              href === "/admin/bookings" && pendingBookingsCount > 0;
 
             return (
               <Link
@@ -201,7 +235,20 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 key={href}
               >
                 <Icon size={17} />
-                {t(labelKey)}
+                <span className="min-w-0 flex-1">{t(labelKey)}</span>
+                {showBookingsBadge && (
+                  <span
+                    aria-label={`${pendingBookingsCount} ${t("admin.pendingBookings")}`}
+                    className={cn(
+                      "ml-auto inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[0.65rem] font-bold",
+                      isActive
+                        ? "bg-background-primary text-gold"
+                        : "bg-gold text-background-primary",
+                    )}
+                  >
+                    {pendingBookingsCount > 99 ? "99+" : pendingBookingsCount}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -248,20 +295,41 @@ export function AdminShell({ children }: { children: ReactNode }) {
         )}
 
         <nav className="mx-auto mt-4 flex max-w-7xl gap-2 overflow-x-auto pb-1 lg:hidden">
-          {navigation.map(({ href, labelKey }) => (
-            <Link
-              className={cn(
-                "shrink-0 rounded-full border px-3 py-1.5 text-xs",
-                pathname === href
-                  ? "border-gold bg-gold text-background-primary"
-                  : "border-white/10 text-noir-gray",
-              )}
-              href={href}
-              key={href}
-            >
-              {t(labelKey)}
-            </Link>
-          ))}
+          {navigation.map(({ href, labelKey }) => {
+            const isActive =
+              pathname === href ||
+              (href !== "/admin" && pathname.startsWith(`${href}/`));
+            const showBookingsBadge =
+              href === "/admin/bookings" && pendingBookingsCount > 0;
+
+            return (
+              <Link
+                className={cn(
+                  "inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-xs",
+                  isActive
+                    ? "border-gold bg-gold text-background-primary"
+                    : "border-white/10 text-noir-gray",
+                )}
+                href={href}
+                key={href}
+              >
+                {t(labelKey)}
+                {showBookingsBadge && (
+                  <span
+                    aria-label={`${pendingBookingsCount} ${t("admin.pendingBookings")}`}
+                    className={cn(
+                      "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[0.62rem] font-bold",
+                      isActive
+                        ? "bg-background-primary text-gold"
+                        : "bg-gold text-background-primary",
+                    )}
+                  >
+                    {pendingBookingsCount > 99 ? "99+" : pendingBookingsCount}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
         </nav>
       </header>
 

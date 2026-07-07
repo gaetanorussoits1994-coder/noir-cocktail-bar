@@ -36,7 +36,7 @@ import { cn } from "@/lib/utils";
 
 const menuCopy = {
   it: {
-    new: "Nuovo cocktail", edit: "Modifica cocktail", description: "Crea, pubblica e ordina i prodotti mostrati sul sito Noir.",
+    new: "Nuovo cocktail/prodotto", edit: "Modifica prodotto", description: "Crea, pubblica e ordina i prodotti mostrati sul sito Noir.",
     details: "Dettagli menu", close: "Chiudi form", name: "Nome", category: "Categoria", price: "Prezzo",
     productDescription: "Descrizione", story: "Storia / origine", ingredients: "Ingredienti",
     tags: "Tag e allergeni", tagsHelp: "Separa i valori con una virgola. Gli allergeni riconosciuti vengono mostrati automaticamente nelle card.",
@@ -47,7 +47,11 @@ const menuCopy = {
     published: "Prodotti pubblicati", allCategories: "Tutte le categorie", loading: "Caricamento menu...",
     empty: "Nessun prodotto presente per questo filtro.", available: "Disponibile", hidden: "Nascosto",
     editAction: "Modifica", hide: "Nascondi", publish: "Pubblica", removeFeatured: "Rimuovi featured",
-    putHome: "Metti in Home", delete: "Elimina",
+    putHome: "Metti in Home", delete: "Elimina", chooseCategory: "Scegli categoria",
+    oneProduct: "1 prodotto", manyProducts: "prodotti", formError: "Inserisci un nome, una categoria e uno slug validi.",
+    duplicateError: "Esiste gia una voce con questo nome nella categoria selezionata.",
+    duplicateCheckError: "Non e stato possibile verificare eventuali duplicati. Riprova.",
+    deleteConfirm: "Eliminare definitivamente questo prodotto?",
   },
   en: {
     new: "New product", edit: "Edit product", description: "Create, publish and arrange the products displayed on the Noir website.",
@@ -61,7 +65,11 @@ const menuCopy = {
     published: "Published products", allCategories: "All categories", loading: "Loading menu...",
     empty: "No products found for this filter.", available: "Available", hidden: "Hidden",
     editAction: "Edit", hide: "Hide", publish: "Publish", removeFeatured: "Remove featured",
-    putHome: "Feature on homepage", delete: "Delete",
+    putHome: "Feature on homepage", delete: "Delete", chooseCategory: "Choose category",
+    oneProduct: "1 product", manyProducts: "products", formError: "Enter a valid name, category and slug.",
+    duplicateError: "An item with this name already exists in the selected category.",
+    duplicateCheckError: "Could not check for duplicates. Please try again.",
+    deleteConfirm: "Permanently delete this product?",
   },
 } as const;
 
@@ -152,6 +160,7 @@ export default function AdminMenuPage() {
   const labels = menuCopy[locale];
   const [items, setItems] = useState<MenuItemRow[]>([]);
   const [filterCategory, setFilterCategory] = useState("all");
+  const [createCategory, setCreateCategory] = useState(emptyForm.category);
   const [form, setForm] = useState<MenuFormState>(emptyForm);
   const [editingId, setEditingId] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -164,7 +173,11 @@ export default function AdminMenuPage() {
     const supabase = getSupabaseClient();
 
     if (!supabase) {
-      setError("Client Supabase non disponibile.");
+      setError(
+        locale === "it"
+          ? "Client Supabase non disponibile."
+          : "Supabase client is unavailable.",
+      );
       setIsLoading(false);
       return;
     }
@@ -184,7 +197,7 @@ export default function AdminMenuPage() {
     }
 
     setIsLoading(false);
-  }, []);
+  }, [locale]);
 
   useEffect(() => {
     void loadMenu();
@@ -209,6 +222,17 @@ export default function AdminMenuPage() {
     [filterCategory, items],
   );
 
+  const groupedItems = useMemo(
+    () =>
+      categories
+        .map((category) => ({
+          category,
+          items: filteredItems.filter((item) => item.category === category),
+        }))
+        .filter((group) => group.items.length > 0),
+    [categories, filteredItems],
+  );
+
   function updateField<Key extends keyof MenuFormState>(
     key: Key,
     value: MenuFormState[Key],
@@ -227,9 +251,9 @@ export default function AdminMenuPage() {
     }));
   }
 
-  function openCreateForm() {
+  function openCreateForm(category = createCategory) {
     setEditingId("");
-    setForm(emptyForm);
+    setForm({ ...emptyForm, category });
     setError("");
     setIsFormOpen(true);
   }
@@ -277,7 +301,7 @@ export default function AdminMenuPage() {
     const category = form.category.trim();
     const slug = slugifyMenuValue(form.slug || name);
     if (!name || !category || !slug) {
-      setError("Inserisci un nome o uno slug valido.");
+      setError(labels.formError);
       return;
     }
 
@@ -294,9 +318,7 @@ export default function AdminMenuPage() {
         "verifica duplicati menu_items",
         duplicateCheckError,
       );
-      setError(
-        "Non è stato possibile verificare eventuali duplicati. Riprova.",
-      );
+      setError(labels.duplicateCheckError);
       setIsSaving(false);
       return;
     }
@@ -309,9 +331,7 @@ export default function AdminMenuPage() {
     );
 
     if (duplicateItem) {
-      setError(
-        `Esiste già una voce “${name}” nella categoria “${category}”.`,
-      );
+      setError(labels.duplicateError);
       setIsSaving(false);
       return;
     }
@@ -403,7 +423,7 @@ export default function AdminMenuPage() {
   }
 
   async function deleteItem(id: string) {
-    if (!window.confirm("Eliminare definitivamente questo cocktail?")) return;
+    if (!window.confirm(labels.deleteConfirm)) return;
 
     const supabase = getSupabaseClient();
     if (!supabase) return;
@@ -427,14 +447,31 @@ export default function AdminMenuPage() {
     <div className="grid gap-8">
       <AdminPageHeader
         action={
-          <button
-            className={primaryButtonClass}
-            onClick={openCreateForm}
-            type="button"
-          >
-            <Plus size={17} />
-            {labels.new}
-          </button>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <label className="sr-only" htmlFor="admin-new-product-category">
+              {labels.chooseCategory}
+            </label>
+            <select
+              className={cn(inputClass, "sm:w-56")}
+              id="admin-new-product-category"
+              onChange={(event) => setCreateCategory(event.target.value)}
+              value={createCategory}
+            >
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+            <button
+              className={primaryButtonClass}
+              onClick={() => openCreateForm()}
+              type="button"
+            >
+              <Plus size={17} />
+              {labels.new}
+            </button>
+          </div>
         }
         description={labels.description}
         eyebrow="Food & beverage"
@@ -747,8 +784,32 @@ export default function AdminMenuPage() {
         ) : filteredItems.length === 0 ? (
           <AdminEmpty message={labels.empty} />
         ) : (
-          <div className="grid gap-4 lg:grid-cols-2">
-            {filteredItems.map((item) => {
+          <div className="grid gap-6">
+            {groupedItems.map((group) => (
+              <section className="grid gap-4" key={group.category}>
+                <div className="flex flex-wrap items-end justify-between gap-3 border-b border-white/10 pb-3">
+                  <div>
+                    <h3 className="font-display text-3xl text-gold-light">
+                      {group.category}
+                    </h3>
+                    <p className="mt-1 text-xs text-noir-gray">
+                      {group.items.length === 1
+                        ? labels.oneProduct
+                        : `${group.items.length} ${labels.manyProducts}`}
+                    </p>
+                  </div>
+                  <button
+                    className={secondaryButtonClass}
+                    onClick={() => openCreateForm(group.category)}
+                    type="button"
+                  >
+                    <Plus size={15} />
+                    {labels.new}
+                  </button>
+                </div>
+
+                <div className="grid gap-4 lg:grid-cols-2">
+                  {group.items.map((item) => {
               const isBusy = activeId === item.id;
 
               return (
@@ -850,7 +911,10 @@ export default function AdminMenuPage() {
                   </div>
                 </article>
               );
-            })}
+                  })}
+                </div>
+              </section>
+            ))}
           </div>
         )}
       </section>

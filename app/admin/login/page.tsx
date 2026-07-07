@@ -20,6 +20,7 @@ export default function AdminLoginPage() {
           invalid: "Email o password non corrette.",
           unavailable: "Configurazione Supabase non disponibile.",
           connection: "Impossibile contattare il servizio di autenticazione. Riprova tra poco.",
+          expired: "La sessione e scaduta. Accedi nuovamente.",
         }
       : {
           intro: "Sign in to manage bookings, menus and Noir experiences.",
@@ -28,6 +29,7 @@ export default function AdminLoginPage() {
           invalid: "Incorrect email or password.",
           unavailable: "Supabase configuration is unavailable.",
           connection: "Unable to contact the authentication service. Please try again shortly.",
+          expired: "Your session expired. Please sign in again.",
         };
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -49,7 +51,7 @@ export default function AdminLoginPage() {
       new URLSearchParams(window.location.search).get("reason") ===
       "session_expired"
     ) {
-      setError("La sessione è scaduta. Accedi nuovamente.");
+      setError(copy.expired);
     }
 
     void supabase.auth
@@ -71,7 +73,7 @@ export default function AdminLoginPage() {
     return () => {
       isMounted = false;
     };
-  }, [router]);
+  }, [copy.expired, router]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
